@@ -20,6 +20,8 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
     : ep(std::move(ep)),
       acceptor(io, std::move(ep)),
       threadPool(thread_pool_size) {
+	// NOTE: set_level
+    set_level(spdlog::level::debug);
     while (true) {
         info("Waiting for connection...");
         std::shared_ptr<asio::ip::tcp::socket> socket_ptr(
@@ -44,17 +46,25 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                     std::array<char, SIZE> buf;
 
                     // read
-                    size_t size = socket_ptr->read_some(asio::buffer(buf));
-                    info("Data received {}", size);
+                    socket_ptr->read_some(asio::buffer(buf));
+                    info("Data received {}", strlen(buf.data()));
 
                     // protoBuf
                     ProtoBuf pb;
                     pb.SetProtoBuf(buf);
 
-                    // FIXME: can only std::array
+                    // FIXME: data can only std::array
+                    auto method = pb.GetMethod();
+                    auto path = pb.GetPath();
                     auto data = pb.GetData<std::array<char, SIZE>>();
 
+                    debug("method: {}", ProtoBuf::MethodToString(method));
+                    debug("path: {}", path.string());
+                    debug("data: {}", data.data());
+
                     // write file
+                    file.SetFilePath(path);
+
                     file.SetFileData(
                         std::string(data.data(), strlen(data.data())));
 

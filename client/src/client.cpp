@@ -11,6 +11,9 @@
 using namespace spdlog;
 
 int main(int argc, char *argv[]) {
+    // NOTE: set_level
+    set_level(spdlog::level::debug);
+
     asio::io_service io;
     asio::ip::tcp::endpoint ep(asio::ip::address::from_string("127.0.0.1"),
                                1234);
@@ -20,11 +23,14 @@ int main(int argc, char *argv[]) {
 
     try {
         // TODO: protoBuf
-        ProtoBuf<char> pb;
-        pb.SetMethod(ProtoBuf<char>::Method::Get);
+        ProtoBuf pb;
+        pb.SetMethod(ProtoBuf::Method::Get);
+        pb.SetPath("result.txt");
+
+        debug("pb path: {}", pb.GetPath().string());
         pb.SetData(std::array<char, SIZE>{'1', '2', '3'});
 
-        sock.write_some(asio::buffer(pb.GetProtoBuf()));
+        sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, SIZE>>()));
         info("Send success");
     } catch (std::exception &e) {
         error("Error: {}", e.what());

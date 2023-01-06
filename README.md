@@ -1,4 +1,5 @@
 ## TcpFileTransmit
+---
 
 ### REQUIRE
 - 构建工具:[xmake](https://github.com/xmake-io/xmake)
@@ -10,5 +11,6 @@
 ### TODO
 - [x] asio basic transmit
 - [ ] templete coding
-- [ ] threadpoll
+- [x] threadpoll
+- [ ] continue transmit
 - [ ] imgui ui
