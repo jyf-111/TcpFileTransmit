@@ -1,0 +1,16 @@
+# vim: set fenc=utf-8 ft=dosini:
+# see: https://github.com/skywind3000/asynctasks.vim/wiki/Task-Config
+
+# define a new task named "file-build"
+[build]
+command=xmake
+cwd=$(VIM_ROOT)
+output=terminal
+pos=bottom
+
+
+[run]
+command=xmake run server
+cwd=$(VIM_ROOT)
+output=terminal
+pos=bottom
