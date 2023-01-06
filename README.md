@@ -9,6 +9,6 @@
 
 ### TODO
 - [x] asio basic transmit
-- [] templete coding
-- [] threadpoll
-- [] imgui ui
+- [ ] templete coding
+- [ ] threadpoll
+- [ ] imgui ui
