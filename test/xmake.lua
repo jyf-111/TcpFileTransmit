@@ -8,7 +8,7 @@ add_requires("gtest")
 
 target("test")
     set_kind("binary")
-    add_files("*.cpp")
+    add_files("main.cpp")
 	add_includedirs("../server/include")
 	add_files("../server/src/File.cpp")
 

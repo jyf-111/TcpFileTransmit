@@ -8,12 +8,6 @@ TEST(FileTest, test) {
     ASSERT_EQ(file.GetFilePath().filename(), "test.txt");
 }
 
-#define SIZE 65536
-template<typename T>
-void func(std::array<T, SIZE> arr) {
-	std::cout << arr.size() << std::endl;
-}
-
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "ProtoBuf.h"
+#include "asio/buffer.hpp"
 
 using namespace spdlog;
 
@@ -18,11 +19,11 @@ int main(int argc, char *argv[]) {
     info("Connect success");
 
     try {
-		// TODO protoBuf 
-        ProtoBuf pb;
-		pb.SetMethod(ProtoBuf::Method::Get);
-		pb.SetData({'a','b','c'});
-		
+        // TODO: protoBuf
+        ProtoBuf<char> pb;
+        pb.SetMethod(ProtoBuf<char>::Method::Get);
+        pb.SetData(std::array<char, SIZE>{'1', '2', '3'});
+
         sock.write_some(asio::buffer(pb.GetProtoBuf()));
         info("Send success");
     } catch (std::exception &e) {
