@@ -1,13 +1,12 @@
 
 #pragma once
 
+#include "def.h"
 #include <array>
 #include <filesystem>
 
 #include "ProtoBuf.h"
 
-#define SIZE 65536
-#define PATHLENGTH 256
 
 /* @brief Class for ProtoBuf
  *

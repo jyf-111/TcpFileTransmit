@@ -1,7 +1,6 @@
 #include "TcpServer.h"
 
 #include <spdlog/spdlog.h>
-#include <windef.h>
 
 #include <array>
 #include <cstring>
@@ -20,7 +19,7 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
     : ep(std::move(ep)),
       acceptor(io, std::move(ep)),
       threadPool(thread_pool_size) {
-	// NOTE: set_level
+    // NOTE: set_level
     set_level(spdlog::level::debug);
     while (true) {
         info("Waiting for connection...");
@@ -40,41 +39,68 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                     // https://www.codenong.com/4068249/
 
                     // init file
-                    File file("result.txt");
+                    File file;
 
-                    // init buffer
+                    // NOTE: init buffer
                     std::array<char, SIZE> buf;
 
-                    // read
+                    // NOTE: read
                     socket_ptr->read_some(asio::buffer(buf));
                     info("Data received {}", strlen(buf.data()));
 
-                    // protoBuf
+                    // NOTE: protoBuf
                     ProtoBuf pb;
                     pb.SetProtoBuf(buf);
 
                     // FIXME: data can only std::array
                     auto method = pb.GetMethod();
                     auto path = pb.GetPath();
-                    auto data = pb.GetData<std::array<char, SIZE>>();
-
                     debug("method: {}", ProtoBuf::MethodToString(method));
                     debug("path: {}", path.string());
-                    debug("data: {}", data.data());
 
-                    // write file
                     file.SetFilePath(path);
 
-                    file.SetFileData(
-                        std::string(data.data(), strlen(data.data())));
+                    std::string result;
+                    switch (method) {
+                        case ProtoBuf::Method::Get: {
+                            // NOTE: Get
+                            result += file.QueryDirectory();
+                            break;
+                        }
+                        case ProtoBuf::Method::Post: {
+                            // NOTE:Post
+                            auto data = pb.GetData<std::array<char, SIZE>>();
+                            debug("data: {}", data.data());
+                            file.SetFileData(
+                                std::string(data.data(), strlen(data.data())));
+                            result += "add file OK";
+                            break;
+                        }
+                        case ProtoBuf::Method::Delete:
+                            // NOTE: Delete
+                            file.DeleteActualFile();
+                            result += "delete file OK";
+                            break;
+                        default:
+                            break;
+                    }
+                    // NOTE: send result to client
+                    socket_ptr->write_some(asio::buffer(result));
 
                 } catch (asio::system_error &e) {
                     if (e.code() == asio::error::eof ||
                         e.code() == asio::error::connection_reset) {
+                        socket_ptr->close();
                         info("Connection closed");
                         break;
                     } else {
+                        // NOTE: send result to client
                         error("Error: {}", e.what());
+                        std::string tmp(e.what());
+                        socket_ptr->write_some(asio::buffer(tmp));
+                        info("send error message to client");
+                        socket_ptr->close();
+                        info("Connection closed");
                         break;
                     }
                 }

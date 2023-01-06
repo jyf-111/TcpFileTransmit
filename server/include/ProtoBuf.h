@@ -5,9 +5,7 @@
 #include <filesystem>
 
 #include "ProtoBuf.h"
-
-#define SIZE 65536
-#define PATHLENGTH 256
+#include "def.h"
 
 /* @brief Class for ProtoBuf
  *
@@ -109,6 +107,7 @@ std::filesystem::path ProtoBuf::GetPath() const {
     std::array<char, PATHLENGTH> path;
     std::copy(protoBuf.begin() + sizeof(Method),
               protoBuf.begin() + sizeof(Method) + PATHLENGTH, path.begin());
+    if (strlen(path.data()) == 0) throw std::runtime_error("Path is empty");
     return {path.data()};
 }
 
@@ -132,11 +131,10 @@ void ProtoBuf::SetMethod(Method method) {
 }
 
 void ProtoBuf::SetPath(std::filesystem::path path) {
-	// NOTE: make sure path takes PATHLENGTH bytes
-	std::string tmp = path.string();
-	tmp.resize(PATHLENGTH,'\0');
-    std::copy(tmp.begin(), tmp.end(),
-              protoBuf.begin() + sizeof(Method));
+    // NOTE: make sure path takes PATHLENGTH bytes
+    std::string tmp = path.string();
+    tmp.resize(PATHLENGTH, '\0');
+    std::copy(tmp.begin(), tmp.end(), protoBuf.begin() + sizeof(Method));
 }
 template <typename U>
 void ProtoBuf::SetData(U data) {

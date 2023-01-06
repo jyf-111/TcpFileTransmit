@@ -1,5 +1,6 @@
 #pragma once
 #include <asio.hpp>
+#include <filesystem>
 
 #include "ThreadPool.h"
 
@@ -11,6 +12,7 @@ class TcpServer {
     ThreadPool threadPool;
 
    public:
+    TcpServer() = delete;
     TcpServer(asio::ip::tcp::endpoint, size_t);
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;

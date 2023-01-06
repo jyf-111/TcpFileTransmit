@@ -1,39 +1,7 @@
-#include <spdlog/spdlog.h>
-
-#include <array>
-#include <asio.hpp>
-#include <fstream>
-#include <iostream>
-
-#include "ProtoBuf.h"
-#include "asio/buffer.hpp"
-
-using namespace spdlog;
+#include "TcpClient.h"
 
 int main(int argc, char *argv[]) {
-    // NOTE: set_level
-    set_level(spdlog::level::debug);
+	TcpClient client("127.0.0.1",1234);
 
-    asio::io_service io;
-    asio::ip::tcp::endpoint ep(asio::ip::address::from_string("127.0.0.1"),
-                               1234);
-    asio::ip::tcp::socket sock(io);
-    sock.connect(ep);
-    info("Connect success");
-
-    try {
-        // TODO: protoBuf
-        ProtoBuf pb;
-        pb.SetMethod(ProtoBuf::Method::Get);
-        pb.SetPath("result.txt");
-
-        debug("pb path: {}", pb.GetPath().string());
-        pb.SetData(std::array<char, SIZE>{'1', '2', '3'});
-
-        sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, SIZE>>()));
-        info("Send success");
-    } catch (std::exception &e) {
-        error("Error: {}", e.what());
-        return 0;
-    }
+    
 }

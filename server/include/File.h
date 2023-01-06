@@ -5,7 +5,7 @@
 #include <array>
 #include <filesystem>
 
-#define SIZE 65536
+#include "def.h"
 
 /**
  * @brief Class for reading and writing files
@@ -14,11 +14,23 @@ class File {
     std::filesystem::path path;
 
    public:
+    File();
     File(const std::filesystem::path &path);
     File(const File &) = delete;
     File(File &&) = delete;
     File &operator=(const File &) = default;
     File &operator=(File &&) = delete;
+
+    /* @brief test FilePath is empty */
+    [[nodiscard]] bool PathIsEmpty() const;
+
+    /* #brief test FilePath is exist */
+    [[nodiscard]] bool PathIsExist() const;
+
+    /* @brief query directory
+     * @return std::string
+     * */
+    [[nodiscard]] std::string QueryDirectory() const;
 
     /*
      * @brief Read file data
@@ -45,4 +57,8 @@ class File {
      * @param data Data to write
      */
     void SetFileData(const std::array<char, SIZE>) const;
-};
+
+    /* @brief delete file */
+    void DeleteActualFile() const;
+}
+;
