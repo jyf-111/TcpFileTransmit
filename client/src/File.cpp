@@ -1,5 +1,7 @@
 #include "File.h"
 
+#include <spdlog/spdlog.h>
+
 #include <fstream>
 
 File::File() = default;

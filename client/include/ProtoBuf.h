@@ -15,7 +15,7 @@
  */
 class ProtoBuf {
    private:
-    std::array<uint8_t, SIZE> protoBuf;
+    std::array<uint8_t, BUF_SIZE> protoBuf;
 
    public:
     /* @brief Method enum */
@@ -105,16 +105,16 @@ ProtoBuf::Method ProtoBuf::GetMethod() const {
 }
 
 std::filesystem::path ProtoBuf::GetPath() const {
-    std::array<char, PATHLENGTH> path;
+    std::array<char, PATH_LENGTH> path;
     std::copy(protoBuf.begin() + sizeof(Method),
-              protoBuf.begin() + sizeof(Method) + PATHLENGTH, path.begin());
+              protoBuf.begin() + sizeof(Method) + PATH_LENGTH, path.begin());
     return {path.data()};
 }
 
 template <typename U>
 U ProtoBuf::GetData() const {
     U realData;
-    std::copy(protoBuf.begin() + sizeof(Method) + PATHLENGTH, protoBuf.end(),
+    std::copy(protoBuf.begin() + sizeof(Method) + PATH_LENGTH, protoBuf.end(),
               realData.begin());
     return realData;
 }
@@ -133,12 +133,12 @@ void ProtoBuf::SetMethod(Method method) {
 void ProtoBuf::SetPath(std::filesystem::path path) {
 	// NOTE: make sure path takes PATHLENGTH bytes
 	std::string tmp = path.string();
-	tmp.resize(PATHLENGTH,'\0');
+	tmp.resize(PATH_LENGTH,'\0');
     std::copy(tmp.begin(), tmp.end(),
               protoBuf.begin() + sizeof(Method));
 }
 template <typename U>
 void ProtoBuf::SetData(U data) {
     std::copy(data.begin(), data.end(),
-              this->protoBuf.begin() + sizeof(Method) + PATHLENGTH);
+              this->protoBuf.begin() + sizeof(Method) + PATH_LENGTH);
 }

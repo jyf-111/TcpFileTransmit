@@ -48,10 +48,10 @@ std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
 
     debug("path: {}", pb.GetPath().string());
 
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, SIZE>>()));
+    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
     info("Send success");
 
-    std::array<char, SIZE> buf;
+    std::array<char, BUF_SIZE> buf;
     size_t size = sock.read_some(asio::buffer(buf));
     info("Receive success {} byte", size);
     return {buf.data(), size};
@@ -68,10 +68,10 @@ std::string app::TcpClient::handlePost(const std::filesystem::path &path,
     debug("path: {}", pb.GetPath().string());
     pb.SetData(data);
 
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, SIZE>>()));
+    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
     info("Send success");
 
-    std::array<char, SIZE> buf;
+    std::array<char, BUF_SIZE> buf;
     size_t size = sock.read_some(asio::buffer(buf));
     info("Receive success {} byte", size);
     return {buf.data(), size};
@@ -85,10 +85,10 @@ std::string app::TcpClient::handleDelete(const std::filesystem::path &path) {
 
     debug("path: {}", pb.GetPath().string());
 
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, SIZE>>()));
+    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
     info("Send success");
 
-    std::array<char, SIZE> buf;
+    std::array<char, BUF_SIZE> buf;
     size_t size = sock.read_some(asio::buffer(buf));
     info("Receive success {} byte", size);
     return {buf.data(), size};
