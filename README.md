@@ -7,7 +7,7 @@
 ### REQUIRE
 
 - 构建工具: [xmake](https://github.com/xmake-io/xmake)
-- 网路库: [asio](https://github.com/chriskohlhoff/asio)
+- 网络库: [asio](https://github.com/chriskohlhoff/asio)
 - 日志库: [spdlog](https://github.com/gabime/spdlog)
 - json库: [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 - 测试库: [gtest](https://github.com/google/googletest)
@@ -24,3 +24,8 @@
 - [ ] imgui ui
 - [ ] gtest
 - [ ] synch -> async
+
+
+### summary
+- fstream 会自动关闭
+- [std::string is not available in asio::buffer when recvive, use std::array instead](https://www.codenong.com/4068249/)

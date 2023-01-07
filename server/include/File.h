@@ -1,7 +1,4 @@
 #pragma once
-
-#include <spdlog/spdlog.h>
-
 #include <array>
 #include <filesystem>
 
@@ -60,5 +57,4 @@ class File {
 
     /* @brief delete file */
     void DeleteActualFile() const;
-}
-;
+};

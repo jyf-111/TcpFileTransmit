@@ -2,10 +2,6 @@
 
 #include <fstream>
 
-#include "spdlog/spdlog.h"
-
-using namespace spdlog;
-
 File::File() = default;
 
 File::File(const std::filesystem::path &path) : path(std::move(path)) {}
@@ -35,6 +31,7 @@ std::string File::GetFileData() const {
 void File::SetFilePath(const std::filesystem::path &path) { this->path = path; }
 
 void File::SetFileData(const std::string &data) const {
+    using namespace spdlog;
     info("Writing to file {} begin", path.string());
     std::ofstream ofs(path, std::ios::app);
     ofs << data;
@@ -42,6 +39,7 @@ void File::SetFileData(const std::string &data) const {
 }
 
 void File::SetFileData(const std::array<char, SIZE> data) const {
+    using namespace spdlog;
     info("Writing to file {} begin", path.string());
     std::ofstream ofs(path, std::ios::app);
     ofs.write(data.data(), data.size());
@@ -49,6 +47,7 @@ void File::SetFileData(const std::array<char, SIZE> data) const {
 }
 
 void File::DeleteActualFile() const {
+    using namespace spdlog;
     info("Deleting file {}", path.string());
     std::filesystem::remove(path);
 }
