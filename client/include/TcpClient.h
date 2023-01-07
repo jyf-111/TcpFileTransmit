@@ -8,6 +8,8 @@
 #include <iostream>
 
 #include "ProtoBuf.h"
+
+namespace app {
 /**
  * @brief TcpClient
  */
@@ -27,8 +29,9 @@ class TcpClient {
 
     TcpClient(std::string ip, size_t port);
 };
+}  // namespace app
 
-TcpClient::TcpClient(std::string ip, size_t port)
+app::TcpClient::TcpClient(std::string ip, size_t port)
     : ep(asio::ip::address::from_string(ip), port), sock(io) {
     using namespace spdlog;
     // NOTE: set_level
@@ -37,7 +40,7 @@ TcpClient::TcpClient(std::string ip, size_t port)
     info("Connect success");
 }
 
-std::string TcpClient::handleGet(const std::filesystem::path &path) {
+std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
     using namespace spdlog;
     // NOTE: protoBuf
     pb.SetMethod(ProtoBuf::Method::Get);
@@ -55,7 +58,8 @@ std::string TcpClient::handleGet(const std::filesystem::path &path) {
 }
 
 template <typename T>
-std::string TcpClient::handlePost(const std::filesystem::path &path, T &&data) {
+std::string app::TcpClient::handlePost(const std::filesystem::path &path,
+                                       T &&data) {
     using namespace spdlog;
     // TODO: protoBuf
     pb.SetMethod(ProtoBuf::Method::Post);
@@ -73,7 +77,7 @@ std::string TcpClient::handlePost(const std::filesystem::path &path, T &&data) {
     return {buf.data(), size};
 }
 
-std::string TcpClient::handleDelete(const std::filesystem::path &path) {
+std::string app::TcpClient::handleDelete(const std::filesystem::path &path) {
     using namespace spdlog;
     // TODO: protoBuf
     pb.SetMethod(ProtoBuf::Method::Delete);

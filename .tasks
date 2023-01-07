@@ -10,7 +10,7 @@ pos=bottom
 
 
 [run]
-command=xmake run server
+command=xmake run client
 cwd=$(VIM_ROOT)
 output=terminal
 pos=bottom
