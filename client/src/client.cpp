@@ -5,6 +5,8 @@
 // + read the top of imgui.cpp. Read online:
 // https://github.com/ocornut/imgui/tree/master/docs
 
+#include <spdlog/spdlog.h>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -125,9 +127,7 @@ int main(int, char**) {
 
     // Our state
     bool show_demo_window = false;
-    bool show_query_window = true;
-    bool show_add_file_window = true;
-    bool show_delete_file_window = true;
+    bool show_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
@@ -155,17 +155,14 @@ int main(int, char**) {
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
         // TODO: start your code here
-        if (show_query_window) {
-            app::render_query_window(show_query_window);
-        }
+        app::UIModule uiModule;
 
-        if (show_add_file_window) {
-            app::render_add_file_window(show_add_file_window);
+        if (show_window) {
+            uiModule.render_query_window(show_window);
+            uiModule.render_add_file_window(show_window);
+            uiModule.render_delete_file_window(show_window);
+            uiModule.render_resultUI(show_window);
         }
-
-		if(show_delete_file_window){
-			app::render_delete_file_window(show_delete_file_window);
-		}
 
         //     // 2. Show a simple window that we create ourselves. We use a
         //     Begin/End pair to create a named window.

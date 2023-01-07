@@ -94,9 +94,7 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                         std::string tmp(e.what());
                         socket_ptr->write_some(asio::buffer(tmp));
                         info("send error message to client");
-                        socket_ptr->close();
                         info("Connection closed");
-                        break;
                     }
                 }
             }

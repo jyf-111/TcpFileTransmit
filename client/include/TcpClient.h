@@ -28,6 +28,9 @@ class TcpClient {
     std::string handleDelete(const std::filesystem::path &path);
 
     TcpClient(std::string ip, size_t port);
+    bool isConnected();
+    void connect();
+    void disconnect();
 };
 }  // namespace app
 
@@ -40,7 +43,20 @@ app::TcpClient::TcpClient(std::string ip, size_t port)
     info("Connect success");
 }
 
+bool app::TcpClient::isConnected() { return sock.is_open(); }
+
+void app::TcpClient::connect() { 
+	if(!isConnected()) sock.connect(ep);
+}
+
+void app::TcpClient::disconnect() { 
+	if(isConnected()) sock.close();
+}
+
 std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
+    if (path.empty()) {
+        throw std::runtime_error("path is empty");
+    }
     using namespace spdlog;
     // NOTE: protoBuf
     pb.SetMethod(ProtoBuf::Method::Get);
@@ -60,6 +76,9 @@ std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
 template <typename T>
 std::string app::TcpClient::handlePost(const std::filesystem::path &path,
                                        T &&data) {
+    if (path.empty()) {
+        throw std::runtime_error("path is empty");
+    }
     using namespace spdlog;
     // TODO: protoBuf
     pb.SetMethod(ProtoBuf::Method::Post);
@@ -78,6 +97,9 @@ std::string app::TcpClient::handlePost(const std::filesystem::path &path,
 }
 
 std::string app::TcpClient::handleDelete(const std::filesystem::path &path) {
+    if (path.empty()) {
+        throw std::runtime_error("path is empty");
+    }
     using namespace spdlog;
     // TODO: protoBuf
     pb.SetMethod(ProtoBuf::Method::Delete);
