@@ -106,7 +106,6 @@ void app::UIModule::render_query_window(bool &show_window) {
 
     ImGui::Text("query file");
     ImGui::BulletText("Enter the file path to query:");
-    ImGui::SameLine();
 
     ImGui::InputTextWithHint("", "file path", selectPath,
                              IM_ARRAYSIZE(selectPath));
@@ -123,8 +122,6 @@ void app::UIModule::render_query_window(bool &show_window) {
         }
     }
 
-    ImGui::BulletText("query result");
-
     ImGui::End();
 }
 
@@ -137,7 +134,6 @@ void app::UIModule::render_add_file_window(bool &show_window) {
 
     ImGui::Text("transmit file");
     ImGui::BulletText("Enter the file path to transmit:");
-    ImGui::SameLine();
 
     ImGui::Text("%s", selectPath);
 
@@ -190,8 +186,6 @@ void app::UIModule::render_add_file_window(bool &show_window) {
         }
     }
 
-    ImGui::BulletText("add result");
-
     ImGui::End();
 }
 
@@ -201,7 +195,6 @@ void app::UIModule::render_delete_file_window(bool &show_window) {
 
     ImGui::Text("delete file");
     ImGui::BulletText("Enter the file path to delete:");
-    ImGui::SameLine();
 
     ImGui::InputTextWithHint("", "file path", sendToPath,
                              IM_ARRAYSIZE(sendToPath));
@@ -217,8 +210,6 @@ void app::UIModule::render_delete_file_window(bool &show_window) {
             resultHandle(e.what(), result);
         }
     }
-
-    ImGui::BulletText("delete result");
 
     ImGui::End();
 }

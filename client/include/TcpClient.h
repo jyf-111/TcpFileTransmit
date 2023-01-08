@@ -39,18 +39,19 @@ app::TcpClient::TcpClient(std::string ip, size_t port)
     using namespace spdlog;
     // NOTE: set_level
     set_level(spdlog::level::debug);
-    sock.connect(ep);
-    info("Connect success");
 }
 
 bool app::TcpClient::isConnected() { return sock.is_open(); }
 
-void app::TcpClient::connect() { 
-	if(!isConnected()) sock.connect(ep);
+void app::TcpClient::connect() {
+    if (!isConnected()) {
+        sock.connect(ep);
+		spdlog::info("Connect success");
+    }
 }
 
-void app::TcpClient::disconnect() { 
-	if(isConnected()) sock.close();
+void app::TcpClient::disconnect() {
+    if (isConnected()) sock.close();
 }
 
 std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
