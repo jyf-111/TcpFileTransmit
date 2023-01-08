@@ -1,0 +1,4 @@
+[submodule "client/3rdparty/ImGuiFileDialog"]
+	path = client/3rdparty/ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog.git
+	branch = Lib_Only
