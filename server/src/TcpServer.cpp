@@ -62,7 +62,8 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                         }
                         case ProtoBuf::Method::Post: {
                             // NOTE: Post
-                            auto data = pb.GetData<std::array<char, BUF_SIZE>>();
+                            auto data =
+                                pb.GetData<std::array<char, BUF_SIZE>>();
                             debug("data: {}", data.data());
                             file.SetFileData(
                                 std::string(data.data(), strlen(data.data())));
@@ -79,8 +80,8 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                     }
                     // NOTE: send result to client
                     socket_ptr->write_some(asio::buffer(result));
-					info("send result to client");
-					info("data {}", result);
+                    info("send result to client");
+                    info("data {}", result);
 
                 } catch (asio::system_error &e) {
                     if (e.code() == asio::error::eof ||
