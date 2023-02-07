@@ -1,6 +1,11 @@
 #include "File.h"
 
+#include <spdlog/spdlog.h>
+
 #include <fstream>
+#include <memory>
+
+using namespace spdlog;
 
 File::File() = default;
 
@@ -23,31 +28,28 @@ std::string File::QueryDirectory() const {
 std::filesystem::path File::GetFilePath() const { return path; }
 
 std::string File::GetFileData() const {
-    std::ifstream ifs(path);
-    return {std::istreambuf_iterator<char>(ifs),
+    std::unique_ptr<std::ifstream> ifs = std::make_unique<std::ifstream>(path);
+    return {std::istreambuf_iterator<char>(*ifs),
             std::istreambuf_iterator<char>()};
 }
 
 void File::SetFilePath(const std::filesystem::path &path) { this->path = path; }
 
 void File::SetFileData(const std::string &data) const {
-    using namespace spdlog;
-    info("Writing to file {} begin", path.string());
     std::ofstream ofs(path, std::ios::app);
     ofs << data;
-    info("Writing to file {} end", path.string());
+    ofs.close();
+    debug("Writing to file {} ", path.string());
 }
 
 void File::SetFileData(const std::array<char, BUF_SIZE> data) const {
-    using namespace spdlog;
-    info("Writing to file {} begin", path.string());
+    debug("Writing to file {} begin", path.string());
     std::ofstream ofs(path, std::ios::app);
     ofs.write(data.data(), data.size());
-    info("Writing to file {} end", path.string());
+    debug("Writing to file {} end", path.string());
 }
 
 void File::DeleteActualFile() const {
-    using namespace spdlog;
-    info("Deleting file {}", path.string());
+    debug("Deleting file {}", path.string());
     std::filesystem::remove(path);
 }

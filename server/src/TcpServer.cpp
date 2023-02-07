@@ -1,5 +1,7 @@
 #include "TcpServer.h"
 
+#include <spdlog/spdlog.h>
+
 #include <array>
 #include <cstring>
 #include <fstream>
@@ -10,39 +12,34 @@
 
 #include "File.h"
 #include "ProtoBuf.h"
+#include "asio/error_code.hpp"
 
 TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
     : ep(std::move(ep)),
       acceptor(io, std::move(ep)),
-      threadPool(thread_pool_size) {
+      threadPool(thread_pool_size) {}
+
+void TcpServer::Process() {
     using namespace spdlog;
-    // NOTE: set_level
     set_level(spdlog::level::debug);
     while (true) {
-        info("Waiting for connection...");
+        debug("Waiting for connection...");
         std::shared_ptr<asio::ip::tcp::socket> socket_ptr(
             new asio::ip::tcp::socket(io));
 
         acceptor.accept(*socket_ptr.get());
-        info("Connection accepted");
+        debug("Connection accepted");
 
-        // NOTE: push task to thread pool
         threadPool.enqueue([socket_ptr]() {
             while (true) {
                 try {
                     // TODO: read some data from client
-
-                    // NOTE: init file
                     File file;
-
-                    // NOTE: init buffer
                     std::array<char, BUF_SIZE> buf;
 
-                    // NOTE: read
                     socket_ptr->read_some(asio::buffer(buf));
-                    info("Data received {}", strlen(buf.data()));
+                    debug("Data received {}", strlen(buf.data()));
 
-                    // NOTE: protoBuf
                     ProtoBuf pb;
                     pb.SetProtoBuf(buf);
 
@@ -56,12 +53,10 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                     std::string result;
                     switch (method) {
                         case ProtoBuf::Method::Get: {
-                            // NOTE: Get
                             result = file.QueryDirectory();
                             break;
                         }
                         case ProtoBuf::Method::Post: {
-                            // NOTE: Post
                             auto data =
                                 pb.GetData<std::array<char, BUF_SIZE>>();
                             debug("data: {}", data.data());
@@ -71,34 +66,32 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
                             break;
                         }
                         case ProtoBuf::Method::Delete:
-                            // NOTE: Delete
                             file.DeleteActualFile();
                             result = "delete file OK";
                             break;
                         default:
                             break;
                     }
-                    // NOTE: send result to client
                     socket_ptr->write_some(asio::buffer(result));
-                    info("send result to client");
-                    info("data {}", result);
+                    debug("send result to client");
+                    debug("data {}", result);
 
                 } catch (asio::system_error &e) {
                     if (e.code() == asio::error::eof ||
                         e.code() == asio::error::connection_reset) {
                         socket_ptr->close();
-                        info("Connection closed");
+                        debug("Connection closed");
                         break;
                     } else {
-                        // NOTE: send result to client
                         error("Error: {}", e.what());
                         std::string tmp(e.what());
                         socket_ptr->write_some(asio::buffer(tmp));
-                        info("send error message to client");
-                        info("Connection closed");
+                        debug("send error message to client");
+                        debug("Connection closed");
                     }
                 }
             }
         });
     }
+
 }

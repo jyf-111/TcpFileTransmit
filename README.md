@@ -28,6 +28,7 @@
 - [ ] synch -> async
 
 
-### summary
+### problem
 - fstream 会自动关闭
 - [std::string is not available in asio::buffer when recvive, use std::array instead](https://www.codenong.com/4068249/)
+- spdlog define SIZE inside,so it must push at first

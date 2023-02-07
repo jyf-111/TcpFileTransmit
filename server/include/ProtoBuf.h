@@ -24,13 +24,9 @@ class ProtoBuf {
     };
 
     ProtoBuf() = default;
-
     ProtoBuf(const ProtoBuf &) = default;
-
     ProtoBuf(ProtoBuf &&) = default;
-
     ProtoBuf &operator=(const ProtoBuf &) = default;
-
     ProtoBuf &operator=(ProtoBuf &&) = default;
 
     /* @brief Method toString

@@ -14,6 +14,7 @@ target("client")
     add_includedirs("../server/include")
     add_files("src/*.cpp")
 	add_files("3rdparty/ImGuiFileDialog/ImGuiFileDialog.cpp")
+    add_files("../server/src/File.cpp")
 
 	add_packages("asio")
 	add_packages("spdlog")
