@@ -11,6 +11,7 @@ target("client")
     set_kind("binary")
 	add_includedirs("include")
 	add_includedirs("3rdparty/ImGuiFileDialog")
+    add_includedirs("../server/include")
     add_files("src/*.cpp")
 	add_files("3rdparty/ImGuiFileDialog/ImGuiFileDialog.cpp")
 
