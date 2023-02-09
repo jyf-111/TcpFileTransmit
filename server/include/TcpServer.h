@@ -2,14 +2,38 @@
 
 #include <asio.hpp>
 #include <filesystem>
+#include <memory>
 
+#include "ProtoBuf.h"
 #include "ThreadPool.h"
+#include "asio/error_code.hpp"
 
 class TcpServer {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
     asio::ip::tcp::acceptor acceptor;
     ThreadPool threadPool;
+
+    /**
+     * handle File Action
+     */
+    std::string handleFileAction(ProtoBuf &protoBuf);
+    /**
+     * handle answer result
+     */
+    void handleResult(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
+                      std::string result);
+
+    /**
+     * handle socket
+     */
+    void handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
+                          const asio::error_code e);
+
+    /**
+     * handle accept
+     */
+    void handleAccept();
 
    public:
     TcpServer(asio::ip::tcp::endpoint, size_t);
@@ -19,5 +43,8 @@ class TcpServer {
     TcpServer &operator=(const TcpServer &) = delete;
     TcpServer &operator=(TcpServer &&) = delete;
 
+    /**
+     * @brief Start the server and wait for connections.
+     */
     void Process();
 };

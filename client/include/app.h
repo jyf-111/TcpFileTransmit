@@ -9,7 +9,6 @@
 #include "ImGuiFileDialog.h"
 #include "TcpClient.h"
 #include "app.h"
-#include "def.h"
 
 /** @brief Application class */
 namespace app {
@@ -19,6 +18,7 @@ TcpClient client("127.0.0.1", 1234);
 
 /** @brief UIModule */
 class UIModule {
+#define BUF_SIZE 65536
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];
     char result[BUF_SIZE];
@@ -35,7 +35,6 @@ class UIModule {
     /**
      * @brief render query window function
      */
-    void render_ConnectUI();
     void render_resultUI(bool &);
     void render_query_window(bool &);
     void render_add_file_window(bool &);
@@ -62,34 +61,6 @@ void app::UIModule::resultHandle(std::string_view result, char *log) {
     tmp.append("\n");
     std::copy(tmp.begin(), tmp.end(), log);
 }
-void app::UIModule::render_ConnectUI() {
-    ImGui::Text("connect status: ");
-	ImGui::SameLine();
-    if (client.isConnected()) {
-        ImGui::Text("Connected");
-    } else {
-        ImGui::Text("Disconnected");
-    }
-    if (ImGui::Button("Connect")) {
-        try {
-            app::client.connect();
-            resultHandle("Connect success", result);
-        } catch (const std::exception &e) {
-            spdlog::error(e.what());
-            resultHandle(e.what(), result);
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Disconnect")) {
-        try {
-            app::client.disconnect();
-            resultHandle("Disconnect", result);
-        } catch (const std::exception &e) {
-            spdlog::error(e.what());
-            resultHandle(e.what(), result);
-        }
-    }
-}
 
 void app::UIModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
@@ -102,7 +73,6 @@ void app::UIModule::render_resultUI(bool &show_window) {
 
 void app::UIModule::render_query_window(bool &show_window) {
     ImGui::Begin("Tcp File query", &show_window, ImGuiWindowFlags_MenuBar);
-    render_ConnectUI();
 
     ImGui::Text("query file");
     ImGui::BulletText("Enter the file path to query:");
@@ -130,7 +100,6 @@ void app::UIModule::render_query_window(bool &show_window) {
  */
 void app::UIModule::render_add_file_window(bool &show_window) {
     ImGui::Begin("Tcp File Transmit", &show_window, ImGuiWindowFlags_MenuBar);
-    render_ConnectUI();
 
     ImGui::Text("transmit file");
     ImGui::BulletText("Enter the file path to transmit:");
@@ -191,7 +160,6 @@ void app::UIModule::render_add_file_window(bool &show_window) {
 
 void app::UIModule::render_delete_file_window(bool &show_window) {
     ImGui::Begin("Tcp File delete", &show_window, ImGuiWindowFlags_MenuBar);
-    render_ConnectUI();
 
     ImGui::Text("delete file");
     ImGui::BulletText("Enter the file path to delete:");

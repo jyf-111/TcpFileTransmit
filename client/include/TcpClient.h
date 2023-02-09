@@ -1,13 +1,19 @@
 // FIXME: 不能分离编译
 #pragma once
 #include <spdlog/spdlog.h>
+#include <vcruntime.h>
+#include <vcruntime_typeinfo.h>
 
 #include <array>
 #include <asio.hpp>
+#include <exception>
 #include <filesystem>
 #include <iostream>
+#include <system_error>
 
 #include "ProtoBuf.h"
+
+using namespace spdlog;
 
 namespace app {
 /**
@@ -15,104 +21,90 @@ namespace app {
  */
 class TcpClient {
     asio::io_service io;
-    asio::ip::tcp::endpoint ep /*(asio::ip::address::from_string("127.0.0.1"),
-                                1234)*/
-        ;
-    asio::ip::tcp::socket sock /*(io)*/;
-    ProtoBuf pb;
+    asio::ip::tcp::endpoint ep;
+    asio::ip::tcp::socket tcpSocket;
+    /**
+     * main Process for recv and send
+     */
+    [[nodiscard]] std::string Process(const ProtoBuf &protobuf);
 
    public:
     std::string handleGet(const std::filesystem::path &path);
-    template <typename T>
-    std::string handlePost(const std::filesystem::path &path, T &&data);
+    std::string handlePost(const std::filesystem::path &path,
+                           const std::string data);
     std::string handleDelete(const std::filesystem::path &path);
 
     TcpClient(std::string ip, size_t port);
-    bool isConnected();
-    void connect();
-    void disconnect();
 };
 }  // namespace app
 
 app::TcpClient::TcpClient(std::string ip, size_t port)
-    : ep(asio::ip::address::from_string(ip), port), sock(io) {
-    using namespace spdlog;
-    // NOTE: set_level
+    : ep(asio::ip::address::from_string(ip), port), tcpSocket(io) {
     set_level(spdlog::level::debug);
+    // TODO: connect
+    tcpSocket.connect(ep);
+    debug("connect success");
 }
 
-bool app::TcpClient::isConnected() { return sock.is_open(); }
+inline std::string app::TcpClient::Process(const ProtoBuf &protobuf) {
+    asio::streambuf buf;
+    std::ostream os(&buf);
+    os << protobuf;
+    std::cout << protobuf << std::endl;
 
-void app::TcpClient::connect() {
-    if (!isConnected()) {
-        sock.connect(ep);
-		spdlog::info("Connect success");
+    asio::write(tcpSocket, buf);
+    debug("Send success");
+
+    asio::streambuf result;
+    try {
+        asio::read(tcpSocket, result);
+    } catch (std::exception &e) {
+            debug("Receive success {} byte", result.size());
+            std::istream is(&result);
+            std::string str, tmp;
+            while (is >> tmp) {
+                str += tmp +"\n";
+            }
+            return str;
     }
-}
-
-void app::TcpClient::disconnect() {
-    if (isConnected()) sock.close();
+    return "";
 }
 
 std::string app::TcpClient::handleGet(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    using namespace spdlog;
-    // NOTE: protoBuf
-    pb.SetMethod(ProtoBuf::Method::Get);
-    pb.SetPath(path);
 
+    ProtoBuf pb(ProtoBuf::Method::Get, path, "null");
     debug("path: {}", pb.GetPath().string());
 
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
-    info("Send success");
-
-    std::array<char, BUF_SIZE> buf;
-    size_t size = sock.read_some(asio::buffer(buf));
-    info("Receive success {} byte", size);
-    return {buf.data(), size};
+    return Process(pb);
 }
 
-template <typename T>
 std::string app::TcpClient::handlePost(const std::filesystem::path &path,
-                                       T &&data) {
+                                       const std::string data) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    using namespace spdlog;
-    // TODO: protoBuf
+
+    ProtoBuf pb;
     pb.SetMethod(ProtoBuf::Method::Post);
     pb.SetPath(path);
-
-    debug("path: {}", pb.GetPath().string());
     pb.SetData(data);
 
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
-    info("Send success");
-
-    std::array<char, BUF_SIZE> buf;
-    size_t size = sock.read_some(asio::buffer(buf));
-    info("Receive success {} byte", size);
-    return {buf.data(), size};
+    debug("path: {}", pb.GetPath().string());
+    return Process(pb);
 }
 
 std::string app::TcpClient::handleDelete(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    using namespace spdlog;
-    // TODO: protoBuf
+
+    ProtoBuf pb;
     pb.SetMethod(ProtoBuf::Method::Delete);
     pb.SetPath(path);
 
     debug("path: {}", pb.GetPath().string());
-
-    sock.write_some(asio::buffer(pb.GetProtoBuf<std::array<char, BUF_SIZE>>()));
-    info("Send success");
-
-    std::array<char, BUF_SIZE> buf;
-    size_t size = sock.read_some(asio::buffer(buf));
-    info("Receive success {} byte", size);
-    return {buf.data(), size};
+    return Process(pb);
 };

@@ -2,8 +2,6 @@
 #include <array>
 #include <filesystem>
 
-#include "def.h"
-
 /**
  * @brief Class for reading and writing files
  */
@@ -49,11 +47,6 @@ class File {
      * @param data Data to write
      */
     void SetFileData(const std::string &data) const;
-    /*
-     * @brief Write file data
-     * @param data Data to write
-     */
-    void SetFileData(const std::array<char, BUF_SIZE>) const;
 
     /* @brief delete file */
     void DeleteActualFile() const;

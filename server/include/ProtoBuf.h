@@ -3,8 +3,7 @@
 #include <array>
 #include <filesystem>
 
-#include "ProtoBuf.h"
-#include "def.h"
+#include "spdlog/spdlog.h"
 
 /* @brief Class for ProtoBuf
  *
@@ -12,9 +11,6 @@
  * { method }{ filepath } { data }
  */
 class ProtoBuf {
-   private:
-    std::array<uint8_t, BUF_SIZE> protoBuf;
-
    public:
     /* @brief Method enum */
     enum class Method {
@@ -22,7 +18,7 @@ class ProtoBuf {
         Post,
         Delete,
     };
-
+    ProtoBuf(Method method, std::filesystem::path path, std::string data);
     ProtoBuf() = default;
     ProtoBuf(const ProtoBuf &) = default;
     ProtoBuf(ProtoBuf &&) = default;
@@ -34,11 +30,10 @@ class ProtoBuf {
      */
     static std::string MethodToString(const Method &method);
 
-    /* @brief Method for get protoBuf
-     * @return U
+    /* @brief String to Method
+     * @param std::string
      */
-    template <typename U>
-    [[nodiscard]] U GetProtoBuf() const;
+    static Method StringToMethod(std::string &string);
 
     /* @brief Method for get method
      * @return Method
@@ -53,12 +48,7 @@ class ProtoBuf {
     /* @brief Method for get data
      * @return U
      */
-    template <typename U>
-    [[nodiscard]] U GetData() const;
-
-    /* @brief Method for set protoBuf */
-    template <typename U>
-    void SetProtoBuf(U);
+    [[nodiscard]] std::string GetData() const;
 
     /* @brief Method for set method */
     void SetMethod(Method);
@@ -67,11 +57,28 @@ class ProtoBuf {
     void SetPath(std::filesystem::path);
 
     /* @brief Method for set data */
-    template <typename U>
-    void SetData(U);
+    void SetData(std::string);
+
+    /*
+     * @brief print protoBuf with ostream
+     */
+    friend std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf);
+    friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
+
+   private:
+    Method method;
+    std::filesystem::path path;
+    std::string data;
 };
 
-std::string ProtoBuf::MethodToString(const Method &method) {
+inline ProtoBuf::ProtoBuf(Method method, std::filesystem::path path,
+                          std::string data) {
+    this->method = method;
+    this->path = std::move(path);
+    this->data = std::move(data);
+}
+
+inline std::string ProtoBuf::MethodToString(const Method &method) {
     switch (method) {
         case Method::Get:
             return "GET";
@@ -80,59 +87,46 @@ std::string ProtoBuf::MethodToString(const Method &method) {
         case Method::Delete:
             return "DELETE";
         default:
-            return "UNKNOWN";
+            throw std::runtime_error("Unknown method");
     }
 }
 
-template <typename U>
-U ProtoBuf::GetProtoBuf() const {
-    U returnProtoBuf;
-    std::memcpy(&returnProtoBuf, protoBuf.data(), sizeof(U));
-    return returnProtoBuf;
+inline ProtoBuf::Method ProtoBuf::StringToMethod(std::string &string) {
+    if (string == "GET")
+        return Method::Get;
+    else if (string == "POST")
+        return Method::Post;
+    else if (string == "DELETE")
+        return Method::Delete;
+    else
+        throw std::runtime_error("Unknown method");
 }
 
-ProtoBuf::Method ProtoBuf::GetMethod() const {
-    Method method;
-    std::copy(protoBuf.begin(), protoBuf.begin() + sizeof(Method),
-              reinterpret_cast<uint8_t *>(&method));
-    return method;
+inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
+
+inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
+
+inline std::string ProtoBuf::GetData() const { return data; }
+
+inline void ProtoBuf::SetMethod(Method method) { this->method = method; }
+
+inline void ProtoBuf::SetPath(std::filesystem::path path) { this->path = path; }
+
+inline void ProtoBuf::SetData(std::string data) { this->data = data; }
+
+inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
+    return os << ProtoBuf::MethodToString(protoBuf.method) << " "
+              << protoBuf.path << " " << protoBuf.data << '\n';
 }
 
-std::filesystem::path ProtoBuf::GetPath() const {
-    std::array<char, PATH_LENGTH> path;
-    std::copy(protoBuf.begin() + sizeof(Method),
-              protoBuf.begin() + sizeof(Method) + PATH_LENGTH, path.begin());
-    if (strlen(path.data()) == 0) throw std::runtime_error("Path is empty");
-    return {path.data()};
-}
+inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
+    std::string method;
+    std::filesystem::path path;
+    std::string data;
+    is >> method >> path >> data;
 
-template <typename U>
-U ProtoBuf::GetData() const {
-    U realData;
-    std::copy(protoBuf.begin() + sizeof(Method) + PATH_LENGTH, protoBuf.end(),
-              realData.begin());
-    return realData;
-}
-
-template <typename U>
-void ProtoBuf::SetProtoBuf(U protoBuf) {
-    std::copy(protoBuf.begin(), protoBuf.end(), this->protoBuf.begin());
-}
-
-void ProtoBuf::SetMethod(Method method) {
-    std::copy(reinterpret_cast<uint8_t *>(&method),
-              reinterpret_cast<uint8_t *>(&method) + sizeof(Method),
-              protoBuf.begin());
-}
-
-void ProtoBuf::SetPath(std::filesystem::path path) {
-    // NOTE: make sure path takes PATHLENGTH bytes
-    std::string tmp = path.string();
-    tmp.resize(PATH_LENGTH, '\0');
-    std::copy(tmp.begin(), tmp.end(), protoBuf.begin() + sizeof(Method));
-}
-template <typename U>
-void ProtoBuf::SetData(U data) {
-    std::copy(data.begin(), data.end(),
-              this->protoBuf.begin() + sizeof(Method) + PATH_LENGTH);
+    protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
+    protoBuf.SetPath(path);
+    protoBuf.SetData(data);
+    return is;
 }

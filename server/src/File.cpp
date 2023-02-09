@@ -42,14 +42,7 @@ void File::SetFileData(const std::string &data) const {
     debug("Writing to file {} ", path.string());
 }
 
-void File::SetFileData(const std::array<char, BUF_SIZE> data) const {
-    debug("Writing to file {} begin", path.string());
-    std::ofstream ofs(path, std::ios::app);
-    ofs.write(data.data(), data.size());
-    debug("Writing to file {} end", path.string());
-}
-
 void File::DeleteActualFile() const {
-    debug("Deleting file {}", path.string());
     std::filesystem::remove(path);
+    debug("Deleting file {}", path.string());
 }
