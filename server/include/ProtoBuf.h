@@ -2,8 +2,8 @@
 
 #include <array>
 #include <filesystem>
-
-#include "spdlog/spdlog.h"
+#include <iterator>
+#include <string>
 
 /* @brief Class for ProtoBuf
  *
@@ -123,7 +123,8 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::string method;
     std::filesystem::path path;
     std::string data;
-    is >> method >> path >> data;
+    is >> method >> path;
+    data = {std::istreambuf_iterator<char>(is),std::istreambuf_iterator<char>()};
 
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);

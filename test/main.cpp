@@ -1,18 +1,18 @@
 #include <asio.hpp>
+#include <fstream>
 #include <iostream>
-#include <iterator>
+#include <streambuf>
+#include <string>
 
-#include "ProtoBuf.h"
 
 int main(int argc, char *argv[]) {
-    ProtoBuf protobuf(ProtoBuf::Method::Get, ".", "data");
-    asio::streambuf buf;
-    std::ostream os(&buf);
-    os << protobuf;
+    std::filebuf buf;
+    buf.open(".classpath", std::ios::in);
     std::istream is(&buf);
-    ProtoBuf protobuf2;
-    is >> protobuf2;
-    std::cout << protobuf2 << std::endl;
-
+    std::string s;
+    while (getline(is,s)) {
+        std::cout << s << std::endl;
+        is.ignore();
+    }
     return 0;
 }

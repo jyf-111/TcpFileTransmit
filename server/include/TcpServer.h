@@ -22,18 +22,23 @@ class TcpServer {
      * handle answer result
      */
     void handleResult(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                      std::string result);
+                     const std::string result);
 
     /**
      * handle socket
      */
     void handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                          const asio::error_code e);
+                      const asio::error_code& e);
 
     /**
      * handle accept
      */
     void handleAccept();
+
+    /**
+     * handle read and write
+     */
+    void handleReadWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
 
    public:
     TcpServer(asio::ip::tcp::endpoint, size_t);
