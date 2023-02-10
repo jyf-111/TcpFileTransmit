@@ -1,11 +1,18 @@
 #include <gtest/gtest.h>
 
-#include <array>
 #include "File.h"
+#include "ProtoBuf.h"
+
 
 TEST(FileTest, test) {
     File file("test.txt");
     ASSERT_EQ(file.GetFilePath().filename(), "test.txt");
+}
+
+TEST(ProtoBuf, Method) {
+    ASSERT_EQ(ProtoBuf::MethodToString(ProtoBuf::Method::Get), "GET");
+    ASSERT_EQ(ProtoBuf::MethodToString(ProtoBuf::Method::Post), "POST");
+    ASSERT_EQ(ProtoBuf::MethodToString(ProtoBuf::Method::Delete), "DELETE");
 }
 
 int main(int argc, char *argv[]) {

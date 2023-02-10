@@ -25,7 +25,7 @@
 - [ ] continue transmit
 - [ ] imgui ui
 - [ ] gtest
-- [ ] synch -> async
+- [x] synch -> async
 
 
 ### problem

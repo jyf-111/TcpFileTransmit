@@ -11,9 +11,7 @@
 using namespace spdlog;
 
 TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
-    : ep(std::move(ep)),
-      acceptor(io, std::move(ep)),
-      threadPool(thread_pool_size) {
+    : ep(std::move(ep)), acceptor(io, std::move(ep)) {
     set_level(spdlog::level::debug);
 }
 

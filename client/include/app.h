@@ -149,8 +149,7 @@ void app::UIModule::render_add_file_window(bool &show_window) {
                     "select file or path to save on server is empty");
             }
             File file(selectPath);
-            const std::string fileContent = file.GetFileData();
-            client.handlePost(sendToPath, fileContent);
+            client.handlePost(sendToPath, file.GetFileData());
         } catch (std::exception &e) {
             spdlog::error("{}", e.what());
         }

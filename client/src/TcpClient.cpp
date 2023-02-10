@@ -42,7 +42,9 @@ void app::TcpClient::handleGet(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
+    std::thread([this, path]() {
+        handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
+    }).detach();
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
@@ -50,14 +52,18 @@ void app::TcpClient::handlePost(const std::filesystem::path &path,
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    handleReadAndWrite({ProtoBuf::Method::Post, path, data});
+    std::thread([this, path, data]() {
+        handleReadAndWrite({ProtoBuf::Method::Post, path, data});
+    }).detach();
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
+    std::thread([this, path]() {
+        handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
+    }).detach();
 };
 
 void app::TcpClient::connect() {

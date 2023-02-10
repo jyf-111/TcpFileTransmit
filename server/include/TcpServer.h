@@ -5,14 +5,11 @@
 #include <memory>
 
 #include "ProtoBuf.h"
-#include "ThreadPool.h"
-#include "asio/error_code.hpp"
 
 class TcpServer {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
     asio::ip::tcp::acceptor acceptor;
-    ThreadPool threadPool;
 
     /**
      * handle File Action
