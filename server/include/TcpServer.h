@@ -22,13 +22,8 @@ class TcpServer {
     /**
      * handle socket
      */
-    void handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                      const asio::error_code& e);
+    void handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
 
-    /**
-     * handle accept
-     */
-    void handleAccept();
 
     /**
      * handle read and write
@@ -44,7 +39,7 @@ class TcpServer {
     TcpServer &operator=(TcpServer &&) = delete;
 
     /**
-     * @brief Start the server and wait for connections.
+     * handle accept
      */
-    void Process();
+    void handleAccept();
 };

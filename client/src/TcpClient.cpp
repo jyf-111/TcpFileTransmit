@@ -3,18 +3,9 @@
 app::TcpClient::TcpClient(std::string ip, size_t port)
     : ep(asio::ip::address::from_string(ip), port), tcpSocket(io) {
     set_level(spdlog::level::debug);
-    connect();
 }
 
-void app::TcpClient::connect() {
-    tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
-        connectFlag = true;
-        debug("connect success");
-    });
-    io.run();
-}
-
-void app::TcpClient::Process(const ProtoBuf protobuf) {
+void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
     debug("new Process");
     std::shared_ptr<asio::streambuf> buf = std::make_shared<asio::streambuf>();
     std::shared_ptr<std::ostream> os =
@@ -51,20 +42,47 @@ void app::TcpClient::handleGet(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    Process({ProtoBuf::Method::Get, path, "null"});
+    handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
-                                       const std::string data) {
+                                const std::string data) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    Process({ProtoBuf::Method::Post, path, data});
+    handleReadAndWrite({ProtoBuf::Method::Post, path, data});
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    Process({ProtoBuf::Method::Delete, path, "null"});
+    handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
 };
+
+void app::TcpClient::connect() {
+    tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
+        connectFlag = true;
+        debug("connect success");
+    });
+    io.run();
+}
+
+void app::TcpClient::disconnect() {
+    if (connectFlag) {
+        connectFlag = false;
+        tcpSocket.shutdown(asio::ip::tcp::socket::shutdown_both);
+        tcpSocket.close();
+        io.stop();
+        debug("disconnect success");
+    } else {
+        debug("client is disconnect,disconnect fail");
+    }
+}
+
+bool app::TcpClient::isConnected() { return connectFlag; }
+
+std::string app::TcpClient::getResult() {
+    std::replace(result.begin(), result.end(), ' ', '\n');
+    return result;
+}

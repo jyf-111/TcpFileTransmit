@@ -22,18 +22,19 @@ char deletePath[BUF_SIZE];
 char result[BUF_SIZE];
 
 /**
- * @brief tcp TcpClient
- */
-TcpClient client("127.0.0.1", 1234);
-
-/**
  * @brief UIModule
  */
 class UIModule {
-    /** @brief result handle*/
+    /**
+     * @brief result handle
+     */
     void resultHandle(std::string_view, char *);
 
    public:
+    /**
+     * @brief tcp TcpClient
+     */
+    TcpClient client{"127.0.0.1", 1234};
     UIModule() = default;
     UIModule(const UIModule &) = delete;
     UIModule(UIModule &&) = delete;

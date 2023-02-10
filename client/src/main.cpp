@@ -1,5 +1,6 @@
 #include <spdlog/spdlog.h>
 
+#include "TcpClient.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -26,7 +27,7 @@ int main(int, char**) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return 1;
 
-    // Decide GL+GLSL versions
+        // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
     // GL ES 2.0 + GLSL 100
     const char* glsl_version = "#version 100";
@@ -68,10 +69,8 @@ int main(int, char**) {
     // Keyboard Controls
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable
     // Gamepad Controls
-    io.ConfigFlags |=
-        ImGuiConfigFlags_DockingEnable;  // enable docking
-    io.ConfigFlags |=
-        ImGuiConfigFlags_ViewportsEnable;  // enable viewport
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // enable docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // enable viewport
     io.ConfigViewportsNoAutoMerge = true;
     // io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -119,6 +118,8 @@ int main(int, char**) {
 
     // init UIModule
     app::UIModule uiModule;
+    uiModule.client.connect();
+
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
@@ -146,6 +147,9 @@ int main(int, char**) {
             uiModule.render_add_file_window(show_window);
             uiModule.render_delete_file_window(show_window);
             uiModule.render_resultUI(show_window);
+        } else {
+            uiModule.client.disconnect();
+            break;
         }
 
         // Rendering

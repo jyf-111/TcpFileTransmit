@@ -22,8 +22,7 @@ class TcpClient {
     /**
      * main Process for recv and send
      */
-    void Process(const ProtoBuf protobuf);
-    void connect();
+    void handleReadAndWrite(const ProtoBuf protobuf);
 
    public:
     void handleGet(const std::filesystem::path &);
@@ -31,10 +30,10 @@ class TcpClient {
     void handleDelete(const std::filesystem::path &);
 
     TcpClient(std::string ip, size_t port);
-    std::string getResult() {
-        std::replace(result.begin(), result.end(), ' ', '\n');
-        return result;
-    }
+    std::string getResult();
+    void connect();
+    void disconnect();
+    bool isConnected();
 };
-}  // namespace app
 
+}  // namespace app

@@ -13,13 +13,8 @@ using namespace spdlog;
 TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
     : ep(std::move(ep)),
       acceptor(io, std::move(ep)),
-      threadPool(thread_pool_size) {}
-
-void TcpServer::Process() {
+      threadPool(thread_pool_size) {
     set_level(spdlog::level::debug);
-    debug("Waiting for connection...");
-
-    handleAccept();
 }
 
 std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
@@ -55,30 +50,35 @@ std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
     return result;
 }
 
-void TcpServer::handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                             const asio::error_code& e) {
-    if (e) {
-        error("Error: {}", e.message());
-        return;
-    }
-    debug("Connection accepted");
-
+void TcpServer::handleSocket(
+    std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     handleReadWrite(socket_ptr);
 }
 
 void TcpServer::handleAccept() {
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr =
         std::make_shared<asio::ip::tcp::socket>(io);
+    debug("connecting");
+    acceptor.async_accept(
+        *socket_ptr, [this, socket_ptr](const asio::error_code& e) {
+            if (e) {
+                socket_ptr->shutdown(asio::ip::tcp::socket::shutdown_both);
+                socket_ptr->close();
 
-    acceptor.async_accept(*socket_ptr,
-                          [this, socket_ptr](const asio::error_code& e) {
-                              if (e) {
-                                  error("Error: {}", e.message());
-                                  return;
-                              }
-                              handleSocket(socket_ptr, e);
-                              handleAccept();
-                          });
+                info("socket close");
+                error("connect Error: {}", e.message());
+            } else {
+                // NOTE: new thread because handleSocket have io.run() will
+                // block
+                //  in handleReadWrite, if async retun, thread will make sure
+                //  handleAccept blow will exec;
+                std::thread([this, socket_ptr]() {
+                    handleSocket(socket_ptr);
+                }).detach();
+                debug("Connection accepted");
+            }
+            handleAccept();
+        });
     try {
         io.reset();
         io.run();
@@ -122,7 +122,9 @@ void TcpServer::handleReadWrite(
         *socket_ptr, *streambuf, '\n',
         [streambuf, socket_ptr, this](const asio::error_code& e, size_t size) {
             if (e) {
+                socket_ptr->shutdown(asio::ip::tcp::socket::shutdown_both);
                 socket_ptr->close();
+                info("socket close");
                 error(e.message());
                 return;
             }
@@ -137,6 +139,8 @@ void TcpServer::handleReadWrite(
                               [this, socket_ptr, result](
                                   const asio::error_code& e, size_t size) {
                                   if (e) {
+                                      socket_ptr->shutdown(
+                                          asio::ip::tcp::socket::shutdown_both);
                                       socket_ptr->close();
                                       info("socket close");
                                       error(e.message());
