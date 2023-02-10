@@ -2,27 +2,34 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
-#include <cstddef>
+#include <string>
 #include <string_view>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
 #include "TcpClient.h"
-#include "app.h"
+
+using namespace spdlog;
 
 /** @brief Application class */
 namespace app {
 
-/** @brief tcp client */
+#define BUF_SIZE 65536
+char queryPath[BUF_SIZE];
+char selectPath[BUF_SIZE];
+char sendToPath[BUF_SIZE];
+char deletePath[BUF_SIZE];
+char result[BUF_SIZE];
+
+/**
+ * @brief tcp TcpClient
+ */
 TcpClient client("127.0.0.1", 1234);
 
-/** @brief UIModule */
+/**
+ * @brief UIModule
+ */
 class UIModule {
-#define BUF_SIZE 65536
-    char selectPath[BUF_SIZE];
-    char sendToPath[BUF_SIZE];
-    char result[BUF_SIZE];
-
     /** @brief result handle*/
     void resultHandle(std::string_view, char *);
 
@@ -65,7 +72,9 @@ void app::UIModule::resultHandle(std::string_view result, char *log) {
 void app::UIModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
-    ImGui::InputTextMultiline("##result", result, IM_ARRAYSIZE(result),
+    std::string res = client.getResult();
+    char *s = const_cast<char *>(res.c_str());
+    ImGui::InputTextMultiline("##result", s, res.size(),
                               ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 20),
                               ImGuiInputTextFlags_ReadOnly);
     ImGui::End();
@@ -77,19 +86,12 @@ void app::UIModule::render_query_window(bool &show_window) {
     ImGui::Text("query file");
     ImGui::BulletText("Enter the file path to query:");
 
-    ImGui::InputTextWithHint("", "file path", selectPath,
-                             IM_ARRAYSIZE(selectPath));
+    ImGui::InputTextWithHint("", "file path", queryPath,
+                             IM_ARRAYSIZE(queryPath));
     ImGui::SameLine();
     if (ImGui::Button("query")) {
-        spdlog::info("query file: {}", selectPath);
-        std::memset(result, 0, BUF_SIZE);
-        try {
-            auto tmp = client.handleGet(selectPath);
-            resultHandle(tmp, result);
-        } catch (std::exception &e) {
-            spdlog::error("query file error: {}", e.what());
-            resultHandle(e.what(), result);
-        }
+        info("query file: {}", queryPath);
+        client.handleGet(queryPath);
     }
 
     ImGui::End();
@@ -121,7 +123,7 @@ void app::UIModule::render_add_file_window(bool &show_window) {
             std::string filePath =
                 ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
-            spdlog::info("add file: {}", filePathName);
+            info("add file: {}", filePathName);
             std::copy(filePathName.begin(), filePathName.end(), selectPath);
             // get file name
             std::filesystem::path path(selectPath);
@@ -147,11 +149,9 @@ void app::UIModule::render_add_file_window(bool &show_window) {
             }
             File file(selectPath);
             const std::string fileContent = file.GetFileData();
-            auto ret = client.handlePost(sendToPath, fileContent);
-            resultHandle(ret, result);
+            client.handlePost(sendToPath, fileContent);
         } catch (std::exception &e) {
             spdlog::error("{}", e.what());
-            resultHandle(e.what(), result);
         }
     }
 
@@ -164,18 +164,16 @@ void app::UIModule::render_delete_file_window(bool &show_window) {
     ImGui::Text("delete file");
     ImGui::BulletText("Enter the file path to delete:");
 
-    ImGui::InputTextWithHint("", "file path", sendToPath,
-                             IM_ARRAYSIZE(sendToPath));
+    ImGui::InputTextWithHint("", "file path", deletePath,
+                             IM_ARRAYSIZE(deletePath));
 
     ImGui::SameLine();
     if (ImGui::Button("delete")) {
-        spdlog::info("delete file:");
+        info("delete file:");
         try {
-            auto ret = client.handleDelete(sendToPath);
-            resultHandle(ret, result);
+            client.handleDelete(deletePath);
         } catch (std::exception &e) {
             spdlog::error("{}", e.what());
-            resultHandle(e.what(), result);
         }
     }
 

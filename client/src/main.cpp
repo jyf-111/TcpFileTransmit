@@ -1,10 +1,3 @@
-// Dear ImGui: standalone example application for GLFW + OpenGL 3, using
-// programmable pipeline (GLFW is a cross-platform general purpose library for
-// handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation,
-// etc.) If you are new to Dear ImGui, read documentation from the docs/ folder
-// + read the top of imgui.cpp. Read online:
-// https://github.com/ocornut/imgui/tree/master/docs
-
 #include <spdlog/spdlog.h>
 
 #include "imgui.h"
@@ -17,16 +10,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>  // Will drag system OpenGL headers
 
-#include <iostream>
-
 #include "app.h"
 
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to
-// maximize ease of testing and compatibility with old VS compilers. To link
-// with VS2010-era libraries, VS2015+ requires linking with
-// legacy_stdio_definitions.lib, which we do using this pragma. Your own project
-// should not be affected, as you are likely to link with a newer binary of GLFW
-// that is adequate for your version of Visual Studio.
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
@@ -41,7 +26,7 @@ int main(int, char**) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return 1;
 
-        // Decide GL+GLSL versions
+    // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
     // GL ES 2.0 + GLSL 100
     const char* glsl_version = "#version 100";
@@ -69,8 +54,8 @@ int main(int, char**) {
 
     // Create window with graphics context
     GLFWwindow* window = glfwCreateWindow(
-        1280, 920, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
-    if (window == NULL) return 1;
+        1280, 920, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+    if (window == nullptr) return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);  // Enable vsync
 
@@ -84,9 +69,9 @@ int main(int, char**) {
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable
     // Gamepad Controls
     io.ConfigFlags |=
-        ImGuiConfigFlags_DockingEnable;  // !!! 启用 docking 功能的支持
+        ImGuiConfigFlags_DockingEnable;  // enable docking
     io.ConfigFlags |=
-        ImGuiConfigFlags_ViewportsEnable;  // !!! 启用 viewport 功能的支持
+        ImGuiConfigFlags_ViewportsEnable;  // enable viewport
     io.ConfigViewportsNoAutoMerge = true;
     // io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -118,7 +103,7 @@ int main(int, char**) {
     // literal you need to write a double backslash \\ !
     // io.Fonts->AddFontDefault();
     // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 25.0f);
-    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 30.0f);
+    io.Fonts->AddFontFromFileTTF(R"(c:\Windows\Fonts\segoeui.ttf)", 30.0f);
     // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 30.0f);
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
@@ -127,11 +112,13 @@ int main(int, char**) {
     // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
     // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
 
-    // Our state
+    // windows status
     bool show_demo_window = false;
     bool show_window = true;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    // init UIModule
+    app::UIModule uiModule;
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         // Poll and handle events (inputs, window resize, etc.)
@@ -151,67 +138,15 @@ int main(int, char**) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in
-        // ImGui::ShowDemoWindow()! You can browse its code to learn more about
-        // Dear ImGui!).
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
         // TODO: start your code here
-        app::UIModule uiModule;
-
         if (show_window) {
             uiModule.render_query_window(show_window);
             uiModule.render_add_file_window(show_window);
             uiModule.render_delete_file_window(show_window);
             uiModule.render_resultUI(show_window);
         }
-
-        //     // 2. Show a simple window that we create ourselves. We use a
-        //     Begin/End pair to create a named window.
-        //     {
-        //         static float f = 0.0f;
-        //         static int counter = 0;
-
-        //         ImGui::Begin("Hello, world!");                          //
-        //         Create a window called "Hello, world!" and append into it
-
-        //         ImGui::Text("This is some useful text.");               //
-        //         Display some text (you can use a format strings too)
-        //         ImGui::Checkbox("Demo Window", &show_demo_window);      //
-        //         Edit bools storing our window open/close state
-        //         ImGui::Checkbox("Another Window", &show_another_window);
-
-        //         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            //
-        //         Edit 1 float using a slider from 0.0f to 1.0f
-        //         ImGui::ColorEdit3("clear color", (float*)&clear_color); //
-        //         Edit 3 floats representing a color
-
-        //         if (ImGui::Button("Button"))                            //
-        //         Buttons return true when clicked (most widgets return true
-        //         when edited/activated)
-        //             counter++;
-        //         ImGui::SameLine();
-        //         ImGui::Text("counter = %d", counter);
-
-        //         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-        //         1000.0f / ImGui::GetIO().Framerate,
-        //         ImGui::GetIO().Framerate); ImGui::End();
-        //     }
-
-        //     // 3. Show another simple window.
-        //     if (show_another_window)
-        //     {
-        //         ImGui::Begin("this is a test windows", &show_another_window);
-        //         // Pass a pointer to our bool variable (the window will have
-        //         a closing button that will clear the bool when clicked)
-        // ImGui::Text("this is a test windows");
-        // ImGui::Checkbox("close", &show_another_window);
-        // if(ImGui::Button("close")){
-        // 	std::cout << "clicked" << std::endl;
-        // 	show_another_window = false;
-        // }
-        //         ImGui::End();
-        //     }
 
         // Rendering
         ImGui::Render();

@@ -18,11 +18,6 @@ class TcpServer {
      * handle File Action
      */
     std::string handleFileAction(ProtoBuf &protoBuf);
-    /**
-     * handle answer result
-     */
-    void handleResult(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                     const std::string result);
 
     /**
      * handle socket
