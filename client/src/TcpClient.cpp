@@ -11,30 +11,34 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
         error("{}", result);
         return;
     }
-    debug("new read and write");
-    std::shared_ptr<asio::streambuf> buf = std::make_shared<asio::streambuf>();
-    std::shared_ptr<std::ostream> os =
-        std::make_shared<std::ostream>(buf.get());
-    *os << protobuf;
-    debug("Send: {} {} {}", ProtoBuf::MethodToString(protobuf.GetMethod()),
-          protobuf.GetPath().string(), protobuf.GetData());
 
-    // NOTE: async_write
-    asio::async_write(
-        tcpSocket, *buf, [this](const asio::error_code e, size_t size) {
-            if (e) throw e;
-            debug("Send success");
+    io.post([this, protobuf]() {
+        debug("new read and write");
+        std::shared_ptr<asio::streambuf> buf =
+            std::make_shared<asio::streambuf>();
+        std::shared_ptr<std::ostream> os =
+            std::make_shared<std::ostream>(buf.get());
+        *os << protobuf;
+        debug("Send: {} {} {}", ProtoBuf::MethodToString(protobuf.GetMethod()),
+              protobuf.GetPath().string(), protobuf.GetData());
 
-            std::shared_ptr<asio::streambuf> resultBuf =
-                std::make_shared<asio::streambuf>();
-            asio::async_read_until(
-                tcpSocket, *resultBuf, '\n',
-                [resultBuf, this](const asio::error_code &e, size_t size) {
-                    debug("Read success");
-                    std::istream is(resultBuf.get());
-                    std::getline(is, result);
-                });
-        });
+        // NOTE: async_write
+        asio::async_write(
+            tcpSocket, *buf, [this](const asio::error_code e, size_t size) {
+                if (e) throw e;
+                debug("Send success");
+
+                std::shared_ptr<asio::streambuf> resultBuf =
+                    std::make_shared<asio::streambuf>();
+                asio::async_read_until(
+                    tcpSocket, *resultBuf, '\n',
+                    [resultBuf, this](const asio::error_code &e, size_t size) {
+                        debug("Read success");
+                        std::istream is(resultBuf.get());
+                        std::getline(is, result);
+                    });
+            });
+    });
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
@@ -60,12 +64,15 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
-        connectFlag = true;
-        debug("connect success");
-    });
-    asio::io_context::work work(io);
-    io.run();
+    //NOTE: put io.run() in thread
+    std::thread([this]() {
+        tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
+            connectFlag = true;
+            debug("connect success");
+        });
+        asio::io_context::work work(io);
+        io.run();
+    }).detach();
 }
 
 void app::TcpClient::disconnect() {

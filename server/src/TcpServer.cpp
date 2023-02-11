@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -44,12 +45,12 @@ std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
         case ProtoBuf::Method::Post: {
             auto data = protoBuf.GetData();
             file.SetFileData(data);
-            result = "add file OK\n";
+            result = "add_file_OK\n";
             break;
         }
         case ProtoBuf::Method::Delete:
             file.DeleteActualFile();
-            result = "delete file OK\n";
+            result = "delete_file_OK\n";
             break;
         default:
             throw std::runtime_error("unknown method");
@@ -95,11 +96,16 @@ void TcpServer::handleReadWrite(
                 return;
             }
             ProtoBuf protoBuf;
-            std::istream is(streambuf.get());
-            is >> protoBuf;
-
-            std::shared_ptr<std::string> result =
-                std::make_shared<std::string>(handleFileAction(protoBuf));
+            std::shared_ptr<std::string> result;
+            try {
+                std::istream is(streambuf.get());
+                is >> protoBuf;
+                result =
+                    std::make_shared<std::string>(handleFileAction(protoBuf));
+            } catch (std::filesystem::filesystem_error& e) {
+                error(e.what());
+                result = std::make_shared<std::string>("error_path\n");
+            }
 
             asio::async_write(*socket_ptr, asio::buffer(*result),
                               [this, socket_ptr, result](
