@@ -30,7 +30,7 @@ void app::view::glfw_error_callback(int error, const char* description) {
 }
 
 void app::view::connect() {
-    std::thread([this]() { clientModule.client.connect(); }).detach();
+    clientModule.client.connect();
 }
 
 void app::view::init() {

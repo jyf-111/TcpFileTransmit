@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <exception>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -102,9 +103,9 @@ void TcpServer::handleReadWrite(
                 is >> protoBuf;
                 result =
                     std::make_shared<std::string>(handleFileAction(protoBuf));
-            } catch (std::filesystem::filesystem_error& e) {
+            } catch (const std::exception& e) {
                 error(e.what());
-                result = std::make_shared<std::string>("error_path\n");
+                result = std::make_shared<std::string>("error_path_or_data\n");
             }
 
             asio::async_write(*socket_ptr, asio::buffer(*result),

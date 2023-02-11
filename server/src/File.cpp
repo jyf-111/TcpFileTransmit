@@ -2,8 +2,10 @@
 
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
 #include <fstream>
 #include <memory>
+#include <stdexcept>
 
 using namespace spdlog;
 
@@ -43,6 +45,11 @@ void File::SetFileData(const std::string &data) const {
 }
 
 void File::DeleteActualFile() const {
-    std::filesystem::remove(path);
-    debug("Deleting file {}", path.string());
+    if (!path.empty() && std::filesystem::exists(path)) {
+        std::filesystem::remove(path);
+        debug("Deleting file {}", path.string());
+    } else {
+        error("File {} does not exist", path.string());
+        throw std::runtime_error("file not exist");
+    }
 }
