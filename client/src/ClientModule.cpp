@@ -8,24 +8,6 @@
 
 using namespace spdlog;
 
-void app::ClientModule::resultHandle(std::string_view result, char *log) {
-    std::memset(log, 0, BUF_SIZE);
-
-    std::time_t t = std::time(nullptr);
-    std::tm *now = std::localtime(&t);
-
-    std::string tmp;
-    tmp += "[";
-    tmp += std::to_string(now->tm_hour);
-    tmp += ":";
-    tmp += std::to_string(now->tm_min);
-    tmp += ":";
-    tmp += std::to_string(now->tm_sec);
-    tmp += "]\n";
-    tmp.append(result);
-    tmp.append("\n");
-    std::copy(tmp.begin(), tmp.end(), log);
-}
 
 void app::ClientModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);

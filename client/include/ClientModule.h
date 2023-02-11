@@ -17,10 +17,6 @@ class ClientModule {
     char sendToPath[BUF_SIZE];
     char deletePath[BUF_SIZE];
     char result[BUF_SIZE];
-    /**
-     * @brief result handle
-     */
-    void resultHandle(std::string_view, char *);
 
    public:
     /**
@@ -42,4 +38,3 @@ class ClientModule {
 };
 
 }  // namespace app
-

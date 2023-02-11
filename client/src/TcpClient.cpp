@@ -5,6 +5,23 @@ app::TcpClient::TcpClient(std::string ip, size_t port)
     set_level(spdlog::level::debug);
 }
 
+void app::TcpClient::resultHandle(std::string &result) {
+    std::time_t t = std::time(nullptr);
+    std::tm *now = std::localtime(&t);
+
+    std::string tmp;
+    tmp += "[";
+    tmp += std::to_string(now->tm_hour);
+    tmp += ":";
+    tmp += std::to_string(now->tm_min);
+    tmp += ":";
+    tmp += std::to_string(now->tm_sec);
+    tmp += "]\n";
+    tmp.append(result);
+    tmp.append("\n");
+    result = tmp;
+}
+
 void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
     if (!connectFlag) {
         result = "not connected";
@@ -64,7 +81,7 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    //NOTE: put io.run() in thread
+    // NOTE: put io.run() in thread
     std::thread([this]() {
         tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
             connectFlag = true;

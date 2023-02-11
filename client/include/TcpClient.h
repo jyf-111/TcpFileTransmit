@@ -24,6 +24,11 @@ class TcpClient {
      */
     void handleReadAndWrite(const ProtoBuf protobuf);
 
+    /**
+     * @brief add time to result
+     */
+    void resultHandle(std::string&);
+
    public:
     void handleGet(const std::filesystem::path &);
     void handlePost(const std::filesystem::path &, const std::string);
