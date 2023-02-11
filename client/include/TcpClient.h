@@ -30,10 +30,10 @@ class TcpClient {
     void handleDelete(const std::filesystem::path &);
 
     TcpClient(std::string ip, size_t port);
-    std::string getResult();
     void connect();
     void disconnect();
     bool isConnected();
+    std::string getResult();
 };
 
 }  // namespace app

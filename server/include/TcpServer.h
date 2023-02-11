@@ -17,15 +17,14 @@ class TcpServer {
     std::string handleFileAction(ProtoBuf &protoBuf);
 
     /**
-     * handle socket
-     */
-    void handleSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
-
-
-    /**
      * handle read and write
      */
     void handleReadWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
+
+    /**
+     * handle accept
+     */
+    void handleAccept();
 
    public:
     TcpServer(asio::ip::tcp::endpoint, size_t);
@@ -36,7 +35,7 @@ class TcpServer {
     TcpServer &operator=(TcpServer &&) = delete;
 
     /**
-     * handle accept
+     * run
      */
-    void handleAccept();
+    void run();
 };

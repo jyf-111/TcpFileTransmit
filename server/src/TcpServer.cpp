@@ -15,6 +15,15 @@ TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
     set_level(spdlog::level::debug);
 }
 
+void TcpServer::run() {
+    handleAccept();
+    try {
+        io.run();
+    } catch (asio::system_error& e) {
+        error("Error: {}", e.what());
+    }
+}
+
 std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
     auto method = protoBuf.GetMethod();
     auto path = protoBuf.GetPath();
@@ -48,14 +57,10 @@ std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
     return result;
 }
 
-void TcpServer::handleSocket(
-    std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
-    handleReadWrite(socket_ptr);
-}
-
 void TcpServer::handleAccept() {
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr =
         std::make_shared<asio::ip::tcp::socket>(io);
+
     debug("connecting");
     acceptor.async_accept(
         *socket_ptr, [this, socket_ptr](const asio::error_code& e) {
@@ -66,52 +71,15 @@ void TcpServer::handleAccept() {
                 info("socket close");
                 error("connect Error: {}", e.message());
             } else {
-                // NOTE: new thread because handleSocket have io.run() will
-                // block
-                //  in handleReadWrite, if async retun, thread will make sure
-                //  handleAccept blow will exec;
-                std::thread([this, socket_ptr]() {
-                    handleSocket(socket_ptr);
-                }).detach();
+                handleReadWrite(socket_ptr);
                 debug("Connection accepted");
             }
             handleAccept();
         });
-    try {
-        io.reset();
-        io.run();
-    } catch (asio::system_error& e) {
-        error("Error: {}", e.what());
-    }
 }
 
 void TcpServer::handleReadWrite(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
-    // NOTE: this is a hack to set the socket to timeout
-    socket_ptr->set_option(asio::socket_base::keep_alive(true));
-    // the timeout value
-    unsigned int timeout_milli = 1000;
-
-// platform-specific switch
-#if defined _WIN32 || defined WIN32 || defined OS_WIN64 || defined _WIN64 || \
-    defined WIN64 || defined WINNT
-    // use windows-specific time
-    int32_t timeout = timeout_milli;
-    setsockopt(socket_ptr->native_handle(), SOL_SOCKET, SO_RCVTIMEO,
-               (const char*)&timeout, sizeof(timeout));
-    setsockopt(socket_ptr->native_handle(), SOL_SOCKET, SO_SNDTIMEO,
-               (const char*)&timeout, sizeof(timeout));
-#else
-    // assume everything else is posix
-    struct timeval tv;
-    tv.tv_sec = timeout_milli / 1000;
-    tv.tv_usec = (timeout_milli % 1000) * 1000;
-    setsockopt(socket_ptr->native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv,
-               sizeof(tv));
-    setsockopt(socket_ptr->native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv,
-               sizeof(tv));
-#endif
-
     std::shared_ptr<asio::streambuf> streambuf =
         std::make_shared<asio::streambuf>();
     debug("new handle read write");
@@ -148,10 +116,4 @@ void TcpServer::handleReadWrite(
                                   handleReadWrite(socket_ptr);
                               });
         });
-    try {
-        io.reset();
-        io.run();
-    } catch (const asio::system_error& e) {
-        error(e.what());
-    }
 }

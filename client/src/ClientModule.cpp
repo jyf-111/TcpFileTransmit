@@ -1,57 +1,14 @@
-#pragma once
+#include "ClientModule.h"
+
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
-#include <string>
-#include <string_view>
-
 #include "File.h"
 #include "ImGuiFileDialog.h"
-#include "TcpClient.h"
 
 using namespace spdlog;
 
-/** @brief Application class */
-namespace app {
-
-#define BUF_SIZE 65536
-char queryPath[BUF_SIZE];
-char selectPath[BUF_SIZE];
-char sendToPath[BUF_SIZE];
-char deletePath[BUF_SIZE];
-char result[BUF_SIZE];
-
-/**
- * @brief UIModule
- */
-class UIModule {
-    /**
-     * @brief result handle
-     */
-    void resultHandle(std::string_view, char *);
-
-   public:
-    /**
-     * @brief tcp TcpClient
-     */
-    TcpClient client{"127.0.0.1", 1234};
-    UIModule() = default;
-    UIModule(const UIModule &) = delete;
-    UIModule(UIModule &&) = delete;
-    UIModule &operator=(const UIModule &) = delete;
-
-    /**
-     * @brief render query window function
-     */
-    void render_resultUI(bool &);
-    void render_query_window(bool &);
-    void render_add_file_window(bool &);
-    void render_delete_file_window(bool &);
-};
-
-}  // namespace app
-
-void app::UIModule::resultHandle(std::string_view result, char *log) {
+void app::ClientModule::resultHandle(std::string_view result, char *log) {
     std::memset(log, 0, BUF_SIZE);
 
     std::time_t t = std::time(nullptr);
@@ -70,7 +27,7 @@ void app::UIModule::resultHandle(std::string_view result, char *log) {
     std::copy(tmp.begin(), tmp.end(), log);
 }
 
-void app::UIModule::render_resultUI(bool &show_window) {
+void app::ClientModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
     std::string res = client.getResult();
@@ -81,7 +38,7 @@ void app::UIModule::render_resultUI(bool &show_window) {
     ImGui::End();
 }
 
-void app::UIModule::render_query_window(bool &show_window) {
+void app::ClientModule::render_query_window(bool &show_window) {
     ImGui::Begin("Tcp File query", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("query file");
@@ -101,7 +58,7 @@ void app::UIModule::render_query_window(bool &show_window) {
 /**
  * @brief render add file window function
  */
-void app::UIModule::render_add_file_window(bool &show_window) {
+void app::ClientModule::render_add_file_window(bool &show_window) {
     ImGui::Begin("Tcp File Transmit", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("transmit file");
@@ -158,7 +115,7 @@ void app::UIModule::render_add_file_window(bool &show_window) {
     ImGui::End();
 }
 
-void app::UIModule::render_delete_file_window(bool &show_window) {
+void app::ClientModule::render_delete_file_window(bool &show_window) {
     ImGui::Begin("Tcp File delete", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("delete file");

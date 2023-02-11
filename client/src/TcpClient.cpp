@@ -6,7 +6,12 @@ app::TcpClient::TcpClient(std::string ip, size_t port)
 }
 
 void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
-    debug("new Process");
+    if (!connectFlag) {
+        result = "not connected";
+        error("{}", result);
+        return;
+    }
+    debug("new read and write");
     std::shared_ptr<asio::streambuf> buf = std::make_shared<asio::streambuf>();
     std::shared_ptr<std::ostream> os =
         std::make_shared<std::ostream>(buf.get());
@@ -30,21 +35,13 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
                     std::getline(is, result);
                 });
         });
-    try {
-        io.reset();
-        io.run();
-    } catch (asio::system_error &e) {
-        throw e;
-    }
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    std::thread([this, path]() {
-        handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
-    }).detach();
+    handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
@@ -52,18 +49,14 @@ void app::TcpClient::handlePost(const std::filesystem::path &path,
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    std::thread([this, path, data]() {
-        handleReadAndWrite({ProtoBuf::Method::Post, path, data});
-    }).detach();
+    handleReadAndWrite({ProtoBuf::Method::Post, path, data});
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
     if (path.empty()) {
         throw std::runtime_error("path is empty");
     }
-    std::thread([this, path]() {
-        handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
-    }).detach();
+    handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
 };
 
 void app::TcpClient::connect() {
@@ -71,6 +64,7 @@ void app::TcpClient::connect() {
         connectFlag = true;
         debug("connect success");
     });
+    asio::io_context::work work(io);
     io.run();
 }
 
