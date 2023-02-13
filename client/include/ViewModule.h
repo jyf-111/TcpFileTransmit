@@ -11,7 +11,7 @@ namespace app {
 /**
  * @brief ClientModule
  */
-class ClientModule {
+class ViewModule {
     char queryPath[BUF_SIZE];
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];
@@ -23,10 +23,10 @@ class ClientModule {
      * @brief tcp TcpClient
      */
     TcpClient client{"127.0.0.1", 1234};
-    ClientModule() = default;
-    ClientModule(const ClientModule &) = delete;
-    ClientModule(ClientModule &&) = delete;
-    ClientModule &operator=(const ClientModule &) = delete;
+    ViewModule() = default;
+    ViewModule(const ViewModule &) = delete;
+    ViewModule(ViewModule &&) = delete;
+    ViewModule &operator=(const ViewModule &) = delete;
 
     /**
      * @brief render query window function

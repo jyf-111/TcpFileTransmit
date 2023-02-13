@@ -1,4 +1,4 @@
-#include "ClientModule.h"
+#include "ViewModule.h"
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
@@ -9,7 +9,7 @@
 using namespace spdlog;
 
 
-void app::ClientModule::render_resultUI(bool &show_window) {
+void app::ViewModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
     std::string res = client.getResult();
@@ -20,7 +20,7 @@ void app::ClientModule::render_resultUI(bool &show_window) {
     ImGui::End();
 }
 
-void app::ClientModule::render_query_window(bool &show_window) {
+void app::ViewModule::render_query_window(bool &show_window) {
     ImGui::Begin("Tcp File query", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("query file");
@@ -40,7 +40,7 @@ void app::ClientModule::render_query_window(bool &show_window) {
 /**
  * @brief render add file window function
  */
-void app::ClientModule::render_add_file_window(bool &show_window) {
+void app::ViewModule::render_add_file_window(bool &show_window) {
     ImGui::Begin("Tcp File Transmit", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("transmit file");
@@ -97,7 +97,7 @@ void app::ClientModule::render_add_file_window(bool &show_window) {
     ImGui::End();
 }
 
-void app::ClientModule::render_delete_file_window(bool &show_window) {
+void app::ViewModule::render_delete_file_window(bool &show_window) {
     ImGui::Begin("Tcp File delete", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("delete file");

@@ -39,6 +39,8 @@ class TcpClient {
     void disconnect();
     bool isConnected();
     std::string getResult();
+
+    void run();
 };
 
 }  // namespace app

@@ -1,12 +1,12 @@
 #include <iostream>
 
-#include "ClientModule.h"
+#include "ViewModule.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 
 namespace app {
 class view {
-    app::ClientModule clientModule;
+    app::ViewModule clientModule;
     GLFWwindow* window;
 
     // windows status

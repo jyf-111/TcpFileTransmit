@@ -30,6 +30,7 @@ void app::view::glfw_error_callback(int error, const char* description) {
 }
 
 void app::view::connect() {
+    clientModule.client.run();
     clientModule.client.connect();
 }
 
@@ -143,7 +144,7 @@ void app::view::loop() {
 
         if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
-        // TODO: start your code here
+        // start your code here
         if (show_window) {
             clientModule.render_query_window(show_window);
             clientModule.render_add_file_window(show_window);

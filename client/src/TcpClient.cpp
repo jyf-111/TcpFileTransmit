@@ -81,15 +81,10 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    // NOTE: put io.run() in thread
-    std::thread([this]() {
-        tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
-            connectFlag = true;
-            debug("connect success");
-        });
-        asio::io_context::work work(io);
-        io.run();
-    }).detach();
+    tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
+        connectFlag = true;
+        debug("connect success");
+    });
 }
 
 void app::TcpClient::disconnect() {
@@ -109,4 +104,11 @@ bool app::TcpClient::isConnected() { return connectFlag; }
 std::string app::TcpClient::getResult() {
     std::replace(result.begin(), result.end(), ' ', '\n');
     return result;
+}
+
+void app::TcpClient::run() {
+    std::thread ([this]() {
+        asio::io_context::work work(io);
+        io.run();
+    }).detach();
 }
