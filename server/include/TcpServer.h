@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
+#include <csignal>
 #include <filesystem>
 #include <memory>
 
@@ -10,6 +11,7 @@ class TcpServer {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
     asio::ip::tcp::acceptor acceptor;
+    asio::signal_set sig{io, SIGINT, SIGTERM};
 
     /**
      * handle File Action
@@ -21,11 +23,6 @@ class TcpServer {
      */
     void handleReadWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
 
-    /**
-     * handle accept
-     */
-    void handleAccept();
-
    public:
     TcpServer(asio::ip::tcp::endpoint, size_t);
     TcpServer() = delete;
@@ -33,6 +30,15 @@ class TcpServer {
     TcpServer(TcpServer &&) = delete;
     TcpServer &operator=(const TcpServer &) = delete;
     TcpServer &operator=(TcpServer &&) = delete;
+
+    /**
+     * handle signal
+     */
+    void handleSignal();
+    /**
+     * handle accept
+     */
+    void handleAccept();
 
     /**
      * run

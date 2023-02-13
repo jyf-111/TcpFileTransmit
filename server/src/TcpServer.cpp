@@ -26,6 +26,24 @@ void TcpServer::run() {
     }
 }
 
+void TcpServer::handleSignal() {
+    sig.async_wait(
+        [this](const std::error_code& e, int signal_number) {
+            switch (signal_number) {
+                case SIGINT:
+                    info("SIGINT received, shutting down");
+                    io.stop();
+                    break;
+                case SIGTERM:
+                    info("SIGTerm received, shutting down");
+                    io.stop();
+                    break;
+                default:
+                    info("default {}", e.message());
+            }
+        });
+}
+
 std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
     auto method = protoBuf.GetMethod();
     auto path = protoBuf.GetPath();
@@ -72,6 +90,7 @@ void TcpServer::handleAccept() {
 
                 info("socket close");
                 error("connect Error: {}", e.message());
+                return;
             } else {
                 handleReadWrite(socket_ptr);
                 info("connection accepted");
