@@ -1,10 +1,38 @@
 #include "TcpClient.h"
 
+#include "Properties.h"
 #include "asio/system_error.hpp"
 
-app::TcpClient::TcpClient(std::string ip, size_t port)
-    : ep(asio::ip::address::from_string(ip), port), tcpSocket(io) {
-    set_level(spdlog::level::debug);
+void app::TcpClient::readProperties() {
+    std::string ip = "127.0.0.1";
+    size_t port = 8000;
+    std::string level = "info";
+    try {
+        Properties properties;
+        auto value = properties.readProperties();
+        ip = value["ip"].asString();
+        port = value["port"].asUInt();
+        level = value["log"].asString();
+    } catch (std::exception &e) {
+        warn("{}", e.what());
+    }
+
+    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+    if (level == "debug") {
+        set_level(spdlog::level::debug);
+    } else if (level == "info") {
+        set_level(spdlog::level::info);
+    } else if (level == "warn") {
+        set_level(spdlog::level::warn);
+    } else if (level == "err") {
+        set_level(spdlog::level::err);
+    } else if (level == "critical") {
+        set_level(spdlog::level::critical);
+    } else if (level == "off") {
+        set_level(spdlog::level::off);
+    } else {
+        set_level(spdlog::level::info);
+    }
 }
 
 void app::TcpClient::resultHandle(std::string &result) {

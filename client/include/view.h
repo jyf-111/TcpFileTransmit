@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "ViewModule.h"
-#include "imgui.h"
 #include "imgui_impl_glfw.h"
 
 namespace app {

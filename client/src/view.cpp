@@ -25,13 +25,10 @@ app::view::~view() {
     glfwTerminate();
 }
 
+void app::view::connect() { viewModule->connect(); }
+
 void app::view::glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
-
-void app::view::connect() {
-    viewModule->client.run();
-    viewModule->client.connect();
 }
 
 void app::view::init() {
@@ -94,9 +91,9 @@ void app::view::init() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Load Fonts
-    // Freetype for higher quality font rendering.
-    #define IMGUI_ENABLE_FREETYPE
+// Load Fonts
+// Freetype for higher quality font rendering.
+#define IMGUI_ENABLE_FREETYPE
     // io.Fonts->AddFontDefault();
     io.Fonts->AddFontFromFileTTF(R"(font\JBfont.ttf)", 30.0f);
 }

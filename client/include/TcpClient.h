@@ -16,7 +16,7 @@ namespace app {
 class TcpClient {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
-    asio::ip::tcp::socket tcpSocket;
+    asio::ip::tcp::socket tcpSocket{io};
     std::string result;
     bool connectFlag = false;
     /**
@@ -27,14 +27,14 @@ class TcpClient {
     /**
      * @brief add time to result
      */
-    void resultHandle(std::string&);
+    void resultHandle(std::string &);
 
    public:
     void handleGet(const std::filesystem::path &);
     void handlePost(const std::filesystem::path &, const std::string);
     void handleDelete(const std::filesystem::path &);
 
-    TcpClient(std::string ip, size_t port);
+    void readProperties();
     void connect();
     void disconnect();
     bool isConnected();

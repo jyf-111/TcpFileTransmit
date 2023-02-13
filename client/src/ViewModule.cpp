@@ -8,6 +8,11 @@
 
 using namespace spdlog;
 
+void app::ViewModule::connect() {
+    client.readProperties();
+    client.run();
+    client.connect();
+}
 
 void app::ViewModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);

@@ -22,18 +22,32 @@ class ViewModule {
     /**
      * @brief tcp TcpClient
      */
-    TcpClient client{"127.0.0.1", 1234};
+    TcpClient client;
     ViewModule() = default;
     ViewModule(const ViewModule &) = delete;
     ViewModule(ViewModule &&) = delete;
     ViewModule &operator=(const ViewModule &) = delete;
 
+    /*
+     * connect client
+     */
+    void connect();
+
+    /**
+     * @brief render result window function
+     */
+    void render_resultUI(bool &);
     /**
      * @brief render query window function
      */
-    void render_resultUI(bool &);
     void render_query_window(bool &);
+    /**
+     * @brief render add file window function
+     */
     void render_add_file_window(bool &);
+    /**
+     * @brief render delete file window function
+     */
     void render_delete_file_window(bool &);
 };
 

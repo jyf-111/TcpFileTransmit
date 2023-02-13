@@ -2,20 +2,15 @@
 
 #include <spdlog/spdlog.h>
 
-#include <exception>
 #include <filesystem>
 #include <memory>
 #include <string>
 
 #include "File.h"
+#include "Properties.h"
 #include "ProtoBuf.h"
 
 using namespace spdlog;
-
-TcpServer::TcpServer(asio::ip::tcp::endpoint ep, size_t thread_pool_size)
-    : ep(std::move(ep)), acceptor(io, std::move(ep)) {
-    set_level(spdlog::level::debug);
-}
 
 void TcpServer::run() {
     handleAccept();
@@ -27,21 +22,52 @@ void TcpServer::run() {
 }
 
 void TcpServer::handleSignal() {
-    sig.async_wait(
-        [this](const std::error_code& e, int signal_number) {
-            switch (signal_number) {
-                case SIGINT:
-                    info("SIGINT received, shutting down");
-                    io.stop();
-                    break;
-                case SIGTERM:
-                    info("SIGTerm received, shutting down");
-                    io.stop();
-                    break;
-                default:
-                    info("default {}", e.message());
-            }
-        });
+    sig.async_wait([this](const std::error_code& e, int signal_number) {
+        switch (signal_number) {
+            case SIGINT:
+                info("SIGINT received, shutting down");
+                io.stop();
+                break;
+            case SIGTERM:
+                info("SIGTerm received, shutting down");
+                io.stop();
+                break;
+            default:
+                info("default {}", e.message());
+        }
+    });
+}
+
+void TcpServer::readProperties() {
+    std::string ip = "127.0.0.1";
+    size_t port = 8000;
+    std::string level = "info";
+    try {
+        Properties properties;
+        auto value = properties.readProperties();
+        ip = value["ip"].asString();
+        port = value["port"].asUInt();
+        level = value["log"].asString();
+    } catch (std::exception& e) {
+        warn("{}", e.what());
+    }
+
+    auto ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+    acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
+
+    if (level == "debug") {
+        set_level(spdlog::level::debug);
+    } else if (level == "info") {
+        set_level(spdlog::level::info);
+    } else if (level == "warn") {
+        set_level(spdlog::level::warn);
+    } else if (level == "err") {
+        set_level(spdlog::level::err);
+    } else if (level == "critical") {
+        set_level(spdlog::level::critical);
+    } else if (level == "off") {
+        set_level(spdlog::level::off);
+    }
 }
 
 std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
