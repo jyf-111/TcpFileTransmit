@@ -1,5 +1,7 @@
 #include "TcpClient.h"
 
+#include "asio/system_error.hpp"
+
 app::TcpClient::TcpClient(std::string ip, size_t port)
     : ep(asio::ip::address::from_string(ip), port), tcpSocket(io) {
     set_level(spdlog::level::debug);
@@ -107,8 +109,12 @@ std::string app::TcpClient::getResult() {
 }
 
 void app::TcpClient::run() {
-    std::thread ([this]() {
+    std::thread([this]() {
         asio::io_context::work work(io);
-        io.run();
+        try {
+            io.run();
+        } catch (const asio::system_error &e) {
+            error(e.what());
+        }
     }).detach();
 }

@@ -63,7 +63,7 @@ void TcpServer::handleAccept() {
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr =
         std::make_shared<asio::ip::tcp::socket>(io);
 
-    debug("connecting");
+    debug("waiting connection");
     acceptor.async_accept(
         *socket_ptr, [this, socket_ptr](const asio::error_code& e) {
             if (e) {
@@ -74,7 +74,7 @@ void TcpServer::handleAccept() {
                 error("connect Error: {}", e.message());
             } else {
                 handleReadWrite(socket_ptr);
-                debug("Connection accepted");
+                info("connection accepted");
             }
             handleAccept();
         });
@@ -84,7 +84,7 @@ void TcpServer::handleReadWrite(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     std::shared_ptr<asio::streambuf> streambuf =
         std::make_shared<asio::streambuf>();
-    debug("new handle read write");
+    info("new handle read write");
 
     asio::async_read_until(
         *socket_ptr, *streambuf, '\n',
