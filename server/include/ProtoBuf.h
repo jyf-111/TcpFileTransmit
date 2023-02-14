@@ -124,7 +124,8 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::filesystem::path path;
     std::string data;
     is >> method >> path;
-    data = {std::istreambuf_iterator<char>(is),std::istreambuf_iterator<char>()};
+    data = {std::istreambuf_iterator<char>(is),
+            std::istreambuf_iterator<char>()};
 
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);

@@ -13,7 +13,6 @@
 using namespace spdlog;
 
 void TcpServer::run() {
-    handleAccept();
     try {
         io.run();
     } catch (asio::system_error& e) {
