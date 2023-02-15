@@ -52,7 +52,7 @@ void app::TcpClient::resultHandle(std::string &result) {
     result = tmp;
 }
 
-void app::TcpClient::handleReadAndWrite(const ProtoBuf protobuf) {
+void app::TcpClient::handleReadAndWrite(const ProtoBuf& protobuf) {
     if (!connectFlag) {
         result = "not connected";
         error("{}", result);

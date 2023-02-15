@@ -25,44 +25,58 @@ class ProtoBuf {
     ProtoBuf &operator=(const ProtoBuf &) = default;
     ProtoBuf &operator=(ProtoBuf &&) = default;
 
-    /* @brief Method toString
+    /**
+     * @brief Method toString
      * @param Method
      */
     static std::string MethodToString(const Method &method);
 
-    /* @brief String to Method
+    /**
+     * @brief String to Method
      * @param std::string
      */
     static Method StringToMethod(std::string &string);
 
-    /* @brief Method for get method
+    /**
+     * @brief Method for get method
      * @return Method
      */
     [[nodiscard]] Method GetMethod() const;
+    /*
+     * @brief Method for set method
+     */
+    void SetMethod(Method);
 
-    /* @brief Method for get path
+    /**
+     * @brief Method for get path
      * @return std::filesystem::path
      */
     [[nodiscard]] std::filesystem::path GetPath() const;
 
-    /* @brief Method for get data
-     * @return U
+    /*
+     * @brief Method for set Path
+     */
+    void SetPath(std::filesystem::path);
+
+    /**
+     * @brief Method for get data
+     * @return std::string
      */
     [[nodiscard]] std::string GetData() const;
 
-    /* @brief Method for set method */
-    void SetMethod(Method);
-
-    /* @brief Method for set path */
-    void SetPath(std::filesystem::path);
-
-    /* @brief Method for set data */
+    /**
+     * @brief Method for set data
+     */
     void SetData(std::string);
 
-    /*
+    /**
      * @brief print protoBuf with ostream
      */
     friend std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf);
+
+    /**
+     * @brief print protoBuf with istream
+     */
     friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
 
    private:
@@ -104,13 +118,13 @@ inline ProtoBuf::Method ProtoBuf::StringToMethod(std::string &string) {
 
 inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
 
-inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
-
-inline std::string ProtoBuf::GetData() const { return data; }
-
 inline void ProtoBuf::SetMethod(Method method) { this->method = method; }
 
+inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
+
 inline void ProtoBuf::SetPath(std::filesystem::path path) { this->path = path; }
+
+inline std::string ProtoBuf::GetData() const { return data; }
 
 inline void ProtoBuf::SetData(std::string data) { this->data = data; }
 

@@ -16,38 +16,48 @@ class File {
     File &operator=(const File &) = default;
     File &operator=(File &&) = delete;
 
-    /* @brief test FilePath is empty */
+    /**
+     * @brief test FilePath is empty
+     */
     [[nodiscard]] bool PathIsEmpty() const;
 
-    /* #brief test FilePath is exist */
+    /**
+     * #brief test FilePath is exist
+     */
     [[nodiscard]] bool PathIsExist() const;
 
-    /* @brief query directory
+    /**
+     * @brief query directory
      * @return std::string
-     * */
+     */
     [[nodiscard]] std::string QueryDirectory() const;
 
-    /*
+    /**
+     * @brief delete file
+     */
+    void DeleteActualFile() const;
+
+    /**
      * @brief Read file data
      * @return File data
      */
     [[nodiscard]] std::string GetFileData() const;
-    /*
-     * @brief get file path
-     * @return file path
-     */
-    [[nodiscard]] std::filesystem::path GetFilePath() const;
-    /*
-     * @brief Write file path
-     * @param data Data to write
-     */
-    void SetFilePath(const std::filesystem::path &path);
-    /*
+
+    /**
      * @brief Write file data
      * @param data Data to write
      */
     void SetFileData(const std::string &data) const;
 
-    /* @brief delete file */
-    void DeleteActualFile() const;
+    /**
+     * @brief get file path
+     * @return file path
+     */
+    [[nodiscard]] std::filesystem::path GetFilePath() const;
+
+    /**
+     * @brief Write file path
+     * @param data Data to write
+     */
+    void SetFilePath(const std::filesystem::path &path);
 };

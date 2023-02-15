@@ -22,7 +22,7 @@ class TcpClient {
     /**
      * main Process for recv and send
      */
-    void handleReadAndWrite(const ProtoBuf protobuf);
+    void handleReadAndWrite(const ProtoBuf& protobuf);
 
     /**
      * @brief add time to result
