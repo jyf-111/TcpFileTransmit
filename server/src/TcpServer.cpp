@@ -171,7 +171,6 @@ void TcpServer::handleReadWrite(
             try {
                 ProtoBuf protoBuf;
                 std::istream is(streambuf.get());
-                streambuf->pubseekpos(0);
                 is >> protoBuf;
                 result =
                     std::make_shared<std::string>(handleFileAction(protoBuf));

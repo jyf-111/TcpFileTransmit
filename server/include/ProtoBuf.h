@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iterator>
 #include <memory>
@@ -22,7 +23,8 @@ class ProtoBuf {
         Post,
         Delete,
     };
-    ProtoBuf(Method method, std::filesystem::path path, std::vector<char> data);
+    ProtoBuf(const Method &method, const std::filesystem::path &path,
+             const std::vector<char> &data);
     ProtoBuf() = default;
     ProtoBuf(const ProtoBuf &) = default;
     ProtoBuf(ProtoBuf &&) = default;
@@ -40,6 +42,26 @@ class ProtoBuf {
      * @param std::string
      */
     static Method StringToMethod(std::string &string);
+
+    /**
+     * @brief Method for get whole size
+     */
+    [[nodiscard]] const std::size_t &GetSize() const;
+
+    /**
+     * @brief Method for set whole size
+     */
+    void SetSize(const std::size_t &size);
+
+    /**
+     * @brief Method for get whole size
+     */
+    [[nodiscard]] const std::size_t &GetHeadSize() const;
+
+    /**
+     * @brief Method for set whole size
+     */
+    void SetHeadSize(const std::size_t &size);
 
     /**
      * @brief Method for get method
@@ -84,16 +106,24 @@ class ProtoBuf {
     friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
 
    private:
+    std::size_t size;
+    std::size_t headsize;
     Method method;
     std::filesystem::path path;
     std::vector<char> data;
 };
 
-inline ProtoBuf::ProtoBuf(Method method, std::filesystem::path path,
-                          std::vector<char> data) {
+inline ProtoBuf::ProtoBuf(const Method &method,
+                          const std::filesystem::path &path,
+                          const std::vector<char> &data) {
     this->method = method;
     this->path = path;
     this->data = data;
+
+    this->headsize = 2 * sizeof(std::size_t) +
+                     ProtoBuf::MethodToString(method).size() +
+                     path.string().size() + 2;
+    this->size = headsize + data.size();
 }
 
 inline std::string ProtoBuf::MethodToString(const Method &method) {
@@ -120,6 +150,18 @@ inline ProtoBuf::Method ProtoBuf::StringToMethod(std::string &string) {
         throw std::runtime_error("Unknown method");
 }
 
+inline const std::size_t &ProtoBuf::GetSize() const { return this->size; }
+
+inline void ProtoBuf::SetSize(const std::size_t &size) { this->size = size; }
+
+inline const std::size_t &ProtoBuf::GetHeadSize() const {
+    return this->headsize;
+}
+
+inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
+    this->headsize = headsize;
+}
+
 inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
 
 inline void ProtoBuf::SetMethod(Method method) { this->method = method; }
@@ -135,31 +177,34 @@ inline void ProtoBuf::SetData(const std::vector<char> &data) {
 }
 
 inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
-    const auto &msg = ProtoBuf::MethodToString(protoBuf.method) + " " +
-                      protoBuf.path.string() + " ";
-    const auto &data = protoBuf.GetData();
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetSize()),
+             sizeof(std::size_t));
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetHeadSize()),
+             sizeof(std::size_t));
+    os << ProtoBuf::MethodToString(protoBuf.method) + " " +
+              protoBuf.path.string() + " ";
 
-    auto size = sizeof(size_t) + msg.size() + data.size();
-    os.write(reinterpret_cast<char *>(&size), sizeof size);
-    os << msg;
+    const auto &data = protoBuf.GetData();
     os.write(data.data(), data.size());
-    spdlog::info("size {}", sizeof(size_t) + msg.size() + data.size());
     return os;
 }
 
 inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::size_t size;
+    std::size_t headsize;
     std::string method;
     std::filesystem::path path;
     is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
+    is.read(reinterpret_cast<char *>(&headsize), sizeof(size_t));
 
     is >> method >> path;
+    spdlog::info("{} {} {} {}", size, headsize, method, path.string());
     is.ignore();
-    std::size_t headsize =
-        sizeof(std::size_t) + method.size() + path.string().size() + 2;
     std::vector<char> data(size - headsize);
     is.read(&data[0], size - headsize);
 
+    protoBuf.SetSize(size);
+    protoBuf.SetHeadSize(headsize);
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);
