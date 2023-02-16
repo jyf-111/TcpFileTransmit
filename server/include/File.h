@@ -2,12 +2,10 @@
 #include <array>
 #include <filesystem>
 
-#include "AbstractFile.h"
-
 /**
  * @brief Class for reading and writing files
  */
-class File : public AbstractFile {
+class File {
     std::filesystem::path path;
 
    public:
@@ -21,20 +19,20 @@ class File : public AbstractFile {
     /**
      * @brief test FilePath is empty
      */
-    void PathIsValid() const override;
+    void PathIsValid() const ;
 
     /**
 
      * @brief get file path
      * @return file path
      */
-    [[nodiscard]] const std::filesystem::path &GetFilePath() const override;
+    [[nodiscard]] const std::filesystem::path &GetFilePath() const ;
 
     /**
      * @brief Write file path
      * @param data Data to write
      */
-    void SetFilePath(const std::filesystem::path &path) override;
+    void SetFilePath(const std::filesystem::path &path);
 
     /**
      * @brief query directory
