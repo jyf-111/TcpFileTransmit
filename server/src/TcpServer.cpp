@@ -4,9 +4,9 @@
 #include <vcruntime.h>
 
 #include <array>
-#include <string>
 #include <filesystem>
 #include <memory>
+#include <string>
 
 #include "File.h"
 #include "Properties.h"
@@ -92,9 +92,12 @@ std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
           path.string());
 
     switch (method) {
-        case ProtoBuf::Method::Get: {
+        case ProtoBuf::Method::Query: {
             result = file.QueryDirectory();
             result += "\n";
+            break;
+        }
+        case ProtoBuf::Method::Get: {
             break;
         }
         case ProtoBuf::Method::Post: {

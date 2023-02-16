@@ -28,11 +28,13 @@ class TcpClient {
     /**
      * @brief add time to result
      */
-    void resultHandle(std::string &);
+    void handleResult(std::string &);
 
    public:
     void handleGet(const std::filesystem::path &);
     void handlePost(const std::filesystem::path &, const std::vector<char> &);
+    void handlePost(const std::filesystem::path &,
+                    const std::vector<std::vector<char>> &);
     void handleDelete(const std::filesystem::path &);
 
     void readProperties();

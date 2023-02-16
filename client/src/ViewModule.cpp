@@ -5,6 +5,7 @@
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
+#include "spdlog/common.h"
 
 using namespace spdlog;
 
@@ -89,7 +90,8 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client.handlePost(sendToPath, file.GetFileData());
+            client.handlePost(sendToPath,
+                              file.GetFileDataSpilted(65536 * 3));
         } catch (std::exception &e) {
             spdlog::error("{}", e.what());
         }

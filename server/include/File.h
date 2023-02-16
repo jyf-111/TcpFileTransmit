@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <filesystem>
+#include <vector>
 
 /**
  * @brief Class for reading and writing files
@@ -19,14 +20,20 @@ class File {
     /**
      * @brief test FilePath is empty
      */
-    void PathIsValid() const ;
+    void PathIsValid() const;
+
 
     /**
+     * @brief get file size
+     * @return file size
+     */
+    [[nodiscard]] const std::size_t GetFileSize() const;
 
+    /**
      * @brief get file path
      * @return file path
      */
-    [[nodiscard]] const std::filesystem::path &GetFilePath() const ;
+    [[nodiscard]] const std::filesystem::path &GetFilePath() const;
 
     /**
      * @brief Write file path
@@ -47,9 +54,10 @@ class File {
 
     /**
      * @brief Read file data
-     * @return File data
+     * @return File data spilted
      */
-    [[nodiscard]] const std::vector<char> GetFileData() const;
+    [[nodiscard]] const std::vector<std::vector<char>> GetFileDataSpilted(
+        const std::size_t &slice) const;
 
     /**
      * @brief Write file data

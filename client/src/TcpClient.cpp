@@ -1,8 +1,11 @@
 #include "TcpClient.h"
 
+#include <filesystem>
 #include <vector>
 
 #include "Properties.h"
+#include "asio/socket_base.hpp"
+#include "spdlog/spdlog.h"
 
 void app::TcpClient::readProperties() {
     std::string ip = "127.0.0.1";
@@ -36,7 +39,7 @@ void app::TcpClient::readProperties() {
     }
 }
 
-void app::TcpClient::resultHandle(std::string &result) {
+void app::TcpClient::handleResult(std::string &result) {
     std::time_t t = std::time(nullptr);
     std::tm *now = std::localtime(&t);
 
@@ -83,18 +86,26 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf &protobuf) {
                     debug("Read success");
                     std::istream is(resultBuf.get());
                     std::getline(is, result);
+                    handleResult(result);
                 });
         });
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
     handleReadAndWrite(
-        {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
+        {ProtoBuf::Method::Query, path, std::vector<char>{'n', 'u', 'l', 'l'}});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
                                 const std::vector<char> &data) {
     handleReadAndWrite({ProtoBuf::Method::Post, path, data});
+}
+
+void app::TcpClient::handlePost(const std::filesystem::path &path,
+                                const std::vector<std::vector<char>> &data) {
+    const auto lenth = data.size();
+    for (int i = 0; i < lenth; i++)
+        handleReadAndWrite({ProtoBuf::Method::Post, path, data.at(i)});
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
