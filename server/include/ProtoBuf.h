@@ -1,9 +1,13 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <array>
 #include <filesystem>
 #include <iterator>
+#include <memory>
 #include <string>
+#include <vector>
 
 /* @brief Class for ProtoBuf
  *
@@ -18,7 +22,7 @@ class ProtoBuf {
         Post,
         Delete,
     };
-    ProtoBuf(Method method, std::filesystem::path path, std::string data);
+    ProtoBuf(Method method, std::filesystem::path path, std::vector<char> data);
     ProtoBuf() = default;
     ProtoBuf(const ProtoBuf &) = default;
     ProtoBuf(ProtoBuf &&) = default;
@@ -62,12 +66,12 @@ class ProtoBuf {
      * @brief Method for get data
      * @return std::string
      */
-    [[nodiscard]] std::string GetData() const;
+    [[nodiscard]] const std::vector<char> &GetData() const;
 
     /**
      * @brief Method for set data
      */
-    void SetData(std::string);
+    void SetData(const std::vector<char> &);
 
     /**
      * @brief print protoBuf with ostream
@@ -82,14 +86,14 @@ class ProtoBuf {
    private:
     Method method;
     std::filesystem::path path;
-    std::string data;
+    std::vector<char> data;
 };
 
 inline ProtoBuf::ProtoBuf(Method method, std::filesystem::path path,
-                          std::string data) {
+                          std::vector<char> data) {
     this->method = method;
-    this->path = std::move(path);
-    this->data = std::move(data);
+    this->path = path;
+    this->data = data;
 }
 
 inline std::string ProtoBuf::MethodToString(const Method &method) {
@@ -124,22 +128,37 @@ inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
 
 inline void ProtoBuf::SetPath(std::filesystem::path path) { this->path = path; }
 
-inline std::string ProtoBuf::GetData() const { return data; }
+inline const std::vector<char> &ProtoBuf::GetData() const { return data; }
 
-inline void ProtoBuf::SetData(std::string data) { this->data = data; }
+inline void ProtoBuf::SetData(const std::vector<char> &data) {
+    this->data = data;
+}
 
 inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
-    return os << ProtoBuf::MethodToString(protoBuf.method) << " "
-              << protoBuf.path << " " << protoBuf.data << '\n';
+    const auto &msg = ProtoBuf::MethodToString(protoBuf.method) + " " +
+                      protoBuf.path.string() + " ";
+    const auto &data = protoBuf.GetData();
+
+    auto size = sizeof(size_t) + msg.size() + data.size();
+    os.write(reinterpret_cast<char *>(&size), sizeof size);
+    os << msg;
+    os.write(data.data(), data.size());
+    spdlog::info("size {}", sizeof(size_t) + msg.size() + data.size());
+    return os;
 }
 
 inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
+    std::size_t size;
     std::string method;
     std::filesystem::path path;
-    std::string data;
+    is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
+
     is >> method >> path;
-    data = {std::istreambuf_iterator<char>(is),
-            std::istreambuf_iterator<char>()};
+    is.ignore();
+    std::size_t headsize =
+        sizeof(std::size_t) + method.size() + path.string().size() + 2;
+    std::vector<char> data(size - headsize);
+    is.read(&data[0], size - headsize);
 
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);

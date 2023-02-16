@@ -13,6 +13,11 @@ class TcpServer {
     asio::signal_set sig{io, SIGINT, SIGTERM};
 
     /**
+     * handle close socket
+     */
+    void handleCloseSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
+
+    /**
      * handle File Action
      */
     std::string handleFileAction(ProtoBuf &protoBuf);

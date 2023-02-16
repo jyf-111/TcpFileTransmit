@@ -1,5 +1,7 @@
 #include "TcpClient.h"
 
+#include <vector>
+
 #include "Properties.h"
 #include "asio/system_error.hpp"
 
@@ -52,7 +54,7 @@ void app::TcpClient::resultHandle(std::string &result) {
     result = tmp;
 }
 
-void app::TcpClient::handleReadAndWrite(const ProtoBuf& protobuf) {
+void app::TcpClient::handleReadAndWrite(const ProtoBuf &protobuf) {
     if (!connectFlag) {
         result = "not connected";
         error("{}", result);
@@ -61,18 +63,19 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf& protobuf) {
 
     io.post([this, protobuf]() {
         debug("new read and write");
-        std::shared_ptr<asio::streambuf> buf =
-            std::make_shared<asio::streambuf>();
-        std::shared_ptr<std::ostream> os =
-            std::make_shared<std::ostream>(buf.get());
+        auto buf = std::make_shared<asio::streambuf>();
+        auto os = std::make_shared<std::ostream>(buf.get());
         *os << protobuf;
-        debug("Send: {} {} {}", ProtoBuf::MethodToString(protobuf.GetMethod()),
-              protobuf.GetPath().string(), protobuf.GetData());
+        debug("Send: {} {} ", ProtoBuf::MethodToString(protobuf.GetMethod()),
+              protobuf.GetPath().string());
 
         // NOTE: async_write
         asio::async_write(
-            tcpSocket, *buf, [this](const asio::error_code e, size_t size) {
-                if (e) throw e;
+            tcpSocket, *buf, [this](const asio::error_code &e, size_t size) {
+                if (e) {
+                    error("{}", e.message());
+                    return;
+                }
                 debug("Send success");
 
                 std::shared_ptr<asio::streambuf> resultBuf =
@@ -89,25 +92,18 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf& protobuf) {
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
-    if (path.empty()) {
-        throw std::runtime_error("path is empty");
-    }
-    handleReadAndWrite({ProtoBuf::Method::Get, path, "null"});
+    handleReadAndWrite(
+        {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
-                                const std::string data) {
-    if (path.empty()) {
-        throw std::runtime_error("path is empty");
-    }
+                                const std::vector<char> &data) {
     handleReadAndWrite({ProtoBuf::Method::Post, path, data});
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
-    if (path.empty()) {
-        throw std::runtime_error("path is empty");
-    }
-    handleReadAndWrite({ProtoBuf::Method::Delete, path, "null"});
+    handleReadAndWrite({ProtoBuf::Method::Delete, path,
+                        std::vector<char>{'n', 'u', 'l', 'l'}});
 };
 
 void app::TcpClient::connect() {

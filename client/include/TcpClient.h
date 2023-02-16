@@ -4,6 +4,7 @@
 
 #include <asio.hpp>
 #include <filesystem>
+#include <vector>
 
 #include "ProtoBuf.h"
 
@@ -31,7 +32,7 @@ class TcpClient {
 
    public:
     void handleGet(const std::filesystem::path &);
-    void handlePost(const std::filesystem::path &, const std::string);
+    void handlePost(const std::filesystem::path &, const std::vector<char>&);
     void handleDelete(const std::filesystem::path &);
 
     void readProperties();

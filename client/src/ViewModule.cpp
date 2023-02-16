@@ -88,10 +88,6 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     if (ImGui::Button("send file")) {
         try {
             // NOTE: transmit file
-            if (strlen(selectPath) == 0 || strlen(sendToPath) == 0) {
-                throw std::runtime_error(
-                    "select file or path to save on server is empty");
-            }
             File file(selectPath);
             client.handlePost(sendToPath, file.GetFileData());
         } catch (std::exception &e) {

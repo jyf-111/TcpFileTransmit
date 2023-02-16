@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 using namespace spdlog;
 
@@ -13,13 +14,14 @@ File::File() = default;
 
 File::File(const std::filesystem::path &path) : path(std::move(path)) {}
 
-bool File::PathIsEmpty() const { return path.empty(); }
-
-bool File::PathIsExist() const {
-    return !path.empty() && std::filesystem::exists(path);
+void File::PathIsValid() const {
+    if (path.empty() || !std::filesystem::exists(path)) {
+        throw std::runtime_error("file is not valid");
+    }
 }
 
 std::string File::QueryDirectory() const {
+    PathIsValid();
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
         tmp += p.path().string() + " ";
@@ -27,29 +29,28 @@ std::string File::QueryDirectory() const {
     return tmp;
 }
 
-std::filesystem::path File::GetFilePath() const { return path; }
+const std::filesystem::path &File::GetFilePath() const { return path; }
 
-std::string File::GetFileData() const {
-    std::unique_ptr<std::ifstream> ifs = std::make_unique<std::ifstream>(path);
-    return {std::istreambuf_iterator<char>(*ifs),
-            std::istreambuf_iterator<char>()};
+const std::vector<char> File::GetFileData() const {
+    PathIsValid();
+    std::ifstream ifs(path, std::ios::binary);
+    auto size = std::filesystem::file_size(path);
+    std::vector<char> data(size);
+    ifs.read(data.data(), size);
+    return data;
 }
 
 void File::SetFilePath(const std::filesystem::path &path) { this->path = path; }
 
-void File::SetFileData(const std::string &data) const {
-    std::ofstream ofs(path, std::ios::app);
-    ofs << data;
+void File::SetFileData(const std::vector<char> &data) const {
+    if (path.empty()) throw std::runtime_error("file is not valid");
+    std::ofstream ofs(path, std::ios::binary | std::ios::app);
+    ofs.write(data.data(), data.size());
     ofs.close();
     debug("Writing to file {} ", path.string());
 }
 
 void File::DeleteActualFile() const {
-    if (!path.empty() && std::filesystem::exists(path)) {
-        std::filesystem::remove(path);
-        debug("Deleting file {}", path.string());
-    } else {
-        error("File {} does not exist", path.string());
-        throw std::runtime_error("file not exist");
-    }
+    PathIsValid();
+    std::filesystem::remove(path);
 }
