@@ -1,6 +1,4 @@
 #pragma once
-#include <string_view>
-
 #include "TcpClient.h"
 
 /** @brief Application class */

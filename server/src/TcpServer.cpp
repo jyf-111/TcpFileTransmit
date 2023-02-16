@@ -4,10 +4,9 @@
 #include <vcruntime.h>
 
 #include <array>
-#include <cstring>
+#include <string>
 #include <filesystem>
 #include <memory>
-#include <string>
 
 #include "File.h"
 #include "Properties.h"
@@ -146,8 +145,8 @@ void TcpServer::handleReadWrite(
                 return 0;
             }
             if (size == sizeof(size_t)) {
-                auto buf = streambuf.get()->data();
-                std::memcpy(peek.get(), buf.data(), sizeof(size_t));
+                std::memcpy(peek.get(), streambuf.get()->data().data(),
+                            sizeof(size_t));
             }
             info("size: {} peek {}", size,
                  *reinterpret_cast<size_t*>(peek.get()));

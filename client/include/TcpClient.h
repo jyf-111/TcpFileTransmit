@@ -23,7 +23,7 @@ class TcpClient {
     /**
      * main Process for recv and send
      */
-    void handleReadAndWrite(const ProtoBuf& protobuf);
+    void handleReadAndWrite(const ProtoBuf &protobuf);
 
     /**
      * @brief add time to result
@@ -32,7 +32,7 @@ class TcpClient {
 
    public:
     void handleGet(const std::filesystem::path &);
-    void handlePost(const std::filesystem::path &, const std::vector<char>&);
+    void handlePost(const std::filesystem::path &, const std::vector<char> &);
     void handleDelete(const std::filesystem::path &);
 
     void readProperties();
