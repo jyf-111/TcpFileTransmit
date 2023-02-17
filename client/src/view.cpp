@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "TcpClient.h"
+#include "ViewModule.h"
 #include "imgui_impl_opengl3.h"
 
 #define GL_SILENCE_DEPRECATION
@@ -25,7 +27,9 @@ app::view::~view() {
     glfwTerminate();
 }
 
-void app::view::connect() { viewModule->connect(); }
+std::shared_ptr<app::ViewModule> app::view::GetViewModule() {
+    return viewModule;
+}
 
 void app::view::glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -122,6 +126,7 @@ void app::view::loop() {
 
         // start your code here
         if (show_window) {
+            viewModule->render_get_window(show_window);
             viewModule->render_query_window(show_window);
             viewModule->render_add_file_window(show_window);
             viewModule->render_delete_file_window(show_window);

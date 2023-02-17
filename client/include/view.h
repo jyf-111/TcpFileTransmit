@@ -16,7 +16,7 @@ class view {
    public:
     void init();
     void loop();
-    void connect();
+    std::shared_ptr<app::ViewModule> GetViewModule();
     static void glfw_error_callback(int error, const char* description);
     ~view();
 };

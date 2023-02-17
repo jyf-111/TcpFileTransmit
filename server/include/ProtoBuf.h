@@ -10,10 +10,8 @@
 #include <string>
 #include <vector>
 
-/* @brief Class for ProtoBuf
- *
- * protoBuf
- * { method }{ filepath } { data }
+/**
+ * @brief Class for ProtoBuf
  */
 class ProtoBuf {
    public:

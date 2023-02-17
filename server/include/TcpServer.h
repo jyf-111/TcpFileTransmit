@@ -4,6 +4,8 @@
 #include <csignal>
 #include <filesystem>
 #include <memory>
+#include <variant>
+#include <vector>
 
 #include "ProtoBuf.h"
 
@@ -20,12 +22,20 @@ class TcpServer {
     /**
      * handle File Action
      */
-    std::string handleFileAction(ProtoBuf &protoBuf);
+    std::variant<std::string, std::vector<std::vector<char>>> handleFileAction(
+        ProtoBuf &protoBuf);
 
     /**
-     * handle read and write
+     * handle read
      */
-    void handleReadWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
+    void handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
+
+    /**
+     * handle write
+     */
+
+    void handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
+                         const ProtoBuf &);
 
    public:
     TcpServer() = default;

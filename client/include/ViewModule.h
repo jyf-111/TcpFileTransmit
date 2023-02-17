@@ -10,6 +10,7 @@ namespace app {
  * @brief ClientModule
  */
 class ViewModule {
+    char getPath[BUF_SIZE];
     char queryPath[BUF_SIZE];
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];
@@ -39,6 +40,10 @@ class ViewModule {
      * @brief render query window function
      */
     void render_query_window(bool &);
+    /**
+     * @brief render get window function
+     */
+    void render_get_window(bool &);
     /**
      * @brief render add file window function
      */

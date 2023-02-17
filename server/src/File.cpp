@@ -26,7 +26,7 @@ std::string File::QueryDirectory() const {
     }
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
-        tmp += p.path().string() + " ";
+        tmp += p.path().string() + "\n";
     }
     return tmp;
 }

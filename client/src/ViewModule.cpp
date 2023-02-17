@@ -37,15 +37,27 @@ void app::ViewModule::render_query_window(bool &show_window) {
     ImGui::SameLine();
     if (ImGui::Button("query")) {
         info("query file: {}", queryPath);
-        client.handleGet(queryPath);
+        client.handleQuery(queryPath);
     }
-
     ImGui::End();
 }
 
-/**
- * @brief render add file window function
- */
+void app::ViewModule::render_get_window(bool &show_window) {
+    ImGui::Begin("Tcp File get", &show_window, ImGuiWindowFlags_MenuBar);
+
+    ImGui::Text("get file");
+    ImGui::BulletText("Enter the file path to get:");
+
+    ImGui::InputTextWithHint("", "file path", getPath,
+                             IM_ARRAYSIZE(getPath));
+    ImGui::SameLine();
+    if (ImGui::Button("get")) {
+        info("get file: {}", queryPath);
+        client.handleGet(queryPath);
+    }
+    ImGui::End();
+}
+
 void app::ViewModule::render_add_file_window(bool &show_window) {
     ImGui::Begin("Tcp File Transmit", &show_window, ImGuiWindowFlags_MenuBar);
 
@@ -90,8 +102,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client.handlePost(sendToPath,
-                              file.GetFileDataSpilted(65536 * 3));
+            client.handlePost(sendToPath, file.GetFileDataSpilted(65536 * 3));
         } catch (std::exception &e) {
             spdlog::error("{}", e.what());
         }

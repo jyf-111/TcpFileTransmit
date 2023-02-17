@@ -1,9 +1,13 @@
 #include "TcpClient.h"
 
 #include <filesystem>
+#include <stdexcept>
+#include <thread>
 #include <vector>
 
+#include "File.h"
 #include "Properties.h"
+#include "ProtoBuf.h"
 #include "asio/socket_base.hpp"
 #include "spdlog/spdlog.h"
 
@@ -40,6 +44,7 @@ void app::TcpClient::readProperties() {
 }
 
 void app::TcpClient::handleResult(std::string &result) {
+    result.clear();
     std::time_t t = std::time(nullptr);
     std::tm *now = std::localtime(&t);
 
@@ -50,13 +55,65 @@ void app::TcpClient::handleResult(std::string &result) {
     tmp += std::to_string(now->tm_min);
     tmp += ":";
     tmp += std::to_string(now->tm_sec);
-    tmp += "]\n";
+    tmp += "]";
     tmp.append(result);
     tmp.append("\n");
     result = tmp;
 }
 
-void app::TcpClient::handleReadAndWrite(const ProtoBuf &protobuf) {
+void app::TcpClient::handleRead() {
+    if (!connectFlag) throw std::runtime_error("not connected");
+    auto resultBuf = std::make_shared<asio::streambuf>();
+
+    auto streambuf = std::make_shared<asio::streambuf>();
+    auto peek = std::make_shared<std::array<char, sizeof(size_t)>>();
+
+    asio::async_read(
+        tcpSocket, *streambuf,
+        [peek, streambuf, this](const asio::system_error &e,
+                                size_t size) -> size_t {
+            if (e.code()) {
+                error("async_reading: {}", e.what());
+                return 0;
+            }
+            if (size == sizeof(size_t)) {
+                std::memcpy(peek.get(), streambuf.get()->data().data(),
+                            sizeof(size_t));
+            }
+            if (size > sizeof(size_t) &&
+                size == *reinterpret_cast<size_t *>(peek.get())) {
+                return 0;
+            } else {
+                return 1;
+            }
+        },
+        [streambuf, this](const asio::error_code &e, size_t size) {
+            if (e) {
+                disconnect();
+                error("async_read: {}", e.message());
+                return;
+            }
+            debug("read complete");
+
+            handleRead();
+
+            ProtoBuf protoBuf;
+            std::istream is(streambuf.get());
+            is >> protoBuf;
+
+            handleResult(result);
+            const bool flag = protoBuf.GetFlag();
+            if (flag) {
+                const auto &data = protoBuf.GetData();
+                result += std::string(data.begin(), data.end());
+            } else {
+                File file(protoBuf.GetPath());
+                file.SetFileData(protoBuf.GetData());
+            }
+        });
+}
+
+void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     if (!connectFlag) {
         result = "not connected";
         error("{}", result);
@@ -71,52 +128,54 @@ void app::TcpClient::handleReadAndWrite(const ProtoBuf &protobuf) {
           protobuf.GetPath().string());
 
     // NOTE: async_write
-    asio::async_write(
-        tcpSocket, *buf.get(), [this](const asio::error_code &e, size_t size) {
-            if (e) {
-                error("{}", e.message());
-                return;
-            }
-            debug("Send success");
+    asio::async_write(tcpSocket, *buf.get(),
+                      [this](const asio::error_code &e, size_t size) {
+                          if (e) {
+                              error("{}", e.message());
+                              return;
+                          }
+                          debug("Send success");
+                      });
+}
 
-            auto resultBuf = std::make_shared<asio::streambuf>();
-            asio::async_read_until(
-                tcpSocket, *resultBuf, '\n',
-                [resultBuf, this](const asio::error_code &e, size_t size) {
-                    debug("Read success");
-                    std::istream is(resultBuf.get());
-                    std::getline(is, result);
-                    handleResult(result);
-                });
-        });
+void app::TcpClient::handleQuery(const std::filesystem::path &path) {
+    handleWrite(
+        {ProtoBuf::Method::Query, path, std::vector<char>{'n', 'u', 'l', 'l'}});
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
-    handleReadAndWrite(
-        {ProtoBuf::Method::Query, path, std::vector<char>{'n', 'u', 'l', 'l'}});
+    handleWrite(
+        {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
                                 const std::vector<char> &data) {
-    handleReadAndWrite({ProtoBuf::Method::Post, path, data});
+    handleWrite({ProtoBuf::Method::Post, path, data});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
                                 const std::vector<std::vector<char>> &data) {
     const auto lenth = data.size();
     for (int i = 0; i < lenth; i++)
-        handleReadAndWrite({ProtoBuf::Method::Post, path, data.at(i)});
+        handleWrite({ProtoBuf::Method::Post, path, data.at(i)});
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
-    handleReadAndWrite({ProtoBuf::Method::Delete, path,
-                        std::vector<char>{'n', 'u', 'l', 'l'}});
+    handleWrite({ProtoBuf::Method::Delete, path,
+                 std::vector<char>{'n', 'u', 'l', 'l'}});
 };
 
 void app::TcpClient::connect() {
     tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
+        if (e.code()) {
+            debug("connect failed");
+            connect();
+            return;
+        }
         connectFlag = true;
         debug("connect success");
+
+        handleRead();
     });
 }
 
@@ -134,10 +193,7 @@ void app::TcpClient::disconnect() {
 
 bool app::TcpClient::isConnected() { return connectFlag; }
 
-std::string app::TcpClient::getResult() {
-    std::replace(result.begin(), result.end(), ' ', '\n');
-    return result;
-}
+std::string app::TcpClient::getResult() { return result; }
 
 void app::TcpClient::run() {
     std::thread([this]() {

@@ -7,10 +7,13 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <variant>
+#include <vector>
 
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "asio/streambuf.hpp"
 
 using std::make_shared;
 
@@ -80,12 +83,12 @@ void TcpServer::readProperties() {
     }
 }
 
-std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
+std::variant<std::string, std::vector<std::vector<char>>>
+TcpServer::handleFileAction(ProtoBuf& protoBuf) {
     auto method = protoBuf.GetMethod();
     auto path = protoBuf.GetPath();
     auto data = protoBuf.GetData();
 
-    std::string result;
     File file(path);
 
     debug("method: {} path: {} ", ProtoBuf::MethodToString(method),
@@ -93,26 +96,22 @@ std::string TcpServer::handleFileAction(ProtoBuf& protoBuf) {
 
     switch (method) {
         case ProtoBuf::Method::Query: {
-            result = file.QueryDirectory();
-            result += "\n";
-            break;
+            return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
-            break;
+            return file.GetFileDataSpilted(65536 * 3);
         }
         case ProtoBuf::Method::Post: {
             file.SetFileData(data);
-            result = "add_file_OK\n";
-            break;
+            return "add file ok";
         }
         case ProtoBuf::Method::Delete:
             file.DeleteActualFile();
-            result = "delete_file_OK\n";
-            break;
+            return "delete_file_OK";
         default:
             throw std::runtime_error("unknown method");
     }
-    return result;
+    return "unknown method";
 }
 
 void TcpServer::handleAccept() {
@@ -126,14 +125,14 @@ void TcpServer::handleAccept() {
                                   handleCloseSocket(socket_ptr);
                                   error("async_accept: " + e.message());
                               } else {
-                                  handleReadWrite(socket_ptr);
+                                  handleRead(socket_ptr);
                                   info("connection accepted");
                               }
                               handleAccept();
                           });
 }
 
-void TcpServer::handleReadWrite(
+void TcpServer::handleRead(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     auto streambuf = std::make_shared<asio::streambuf>();
     info("new handle read write");
@@ -151,8 +150,6 @@ void TcpServer::handleReadWrite(
                 std::memcpy(peek.get(), streambuf.get()->data().data(),
                             sizeof(size_t));
             }
-            info("size: {} peek {}", size,
-                 *reinterpret_cast<size_t*>(peek.get()));
             if (size > sizeof(size_t) &&
                 size == *reinterpret_cast<size_t*>(peek.get())) {
                 return 0;
@@ -168,29 +165,51 @@ void TcpServer::handleReadWrite(
             }
             debug("read complete");
 
-            handleReadWrite(socket_ptr);
+            handleRead(socket_ptr);
 
-            std::shared_ptr<std::string> result;
+            std::variant<std::string, std::vector<std::vector<char>>> result;
+
+            ProtoBuf protoBuf;
             try {
-                ProtoBuf protoBuf;
                 std::istream is(streambuf.get());
                 is >> protoBuf;
-                result =
-                    std::make_shared<std::string>(handleFileAction(protoBuf));
+                result = handleFileAction(protoBuf);
             } catch (const std::exception& e) {
                 error(e.what());
-                result = std::make_shared<std::string>("error_path_or_data\n");
+                result = "some error occured";
             }
-            asio::async_write(*socket_ptr, asio::buffer(*result),
-                              [this, socket_ptr, result](
-                                  const asio::error_code& e, size_t size) {
-                                  if (e) {
-                                      handleCloseSocket(socket_ptr);
-                                      error("async_write: {}", e.message());
-                                      return;
-                                  }
-                                  debug("send result to client success: {}",
-                                        *result);
-                              });
+            if (result.index() == 0) {
+                const auto& str = std::get<std::string>(result);
+
+                ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
+                             std::vector<char>(str.begin(), str.end())};
+                ret.SetFlag(true);
+                handleWrite(socket_ptr, ret);
+
+            } else {
+                const auto& vec =
+                    std::get<std::vector<std::vector<char>>>(result);
+                for (const auto& v : vec) {
+                    ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(), v};
+                    handleWrite(socket_ptr, ret);
+                }
+            }
+        });
+}
+void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
+                            const ProtoBuf& protobuf) {
+    auto buf = std::make_shared<asio::streambuf>();
+    std::ostream os(buf.get());
+    os << protobuf;
+
+    asio::async_write(
+        *socket_ptr, *buf,
+        [this, socket_ptr](const asio::error_code& e, size_t size) {
+            if (e) {
+                handleCloseSocket(socket_ptr);
+                error("async_write: {}", e.message());
+                return;
+            }
+            debug("send result to client success");
         });
 }

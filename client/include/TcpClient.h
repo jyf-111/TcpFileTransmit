@@ -20,10 +20,16 @@ class TcpClient {
     asio::ip::tcp::socket tcpSocket{io};
     std::string result;
     bool connectFlag = false;
+
+    /**
+     * handle read
+     */
+    void handleRead();
+
     /**
      * main Process for recv and send
      */
-    void handleReadAndWrite(const ProtoBuf &protobuf);
+    void handleWrite(const ProtoBuf &protobuf);
 
     /**
      * @brief add time to result
@@ -31,6 +37,7 @@ class TcpClient {
     void handleResult(std::string &);
 
    public:
+    void handleQuery(const std::filesystem::path &);
     void handleGet(const std::filesystem::path &);
     void handlePost(const std::filesystem::path &, const std::vector<char> &);
     void handlePost(const std::filesystem::path &,
