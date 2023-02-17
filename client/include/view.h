@@ -10,7 +10,7 @@ class view {
     GLFWwindow* window;
 
     // windows status
-    bool show_demo_window = false;
+    bool show_demo_window = true;
     bool show_window = true;
 
    public:

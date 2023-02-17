@@ -19,6 +19,24 @@ using std::make_shared;
 
 using namespace spdlog;
 
+std::string TcpServer::getIp() const { return ip; }
+
+void TcpServer::setIp(const std::string& ip) { this->ip = ip; }
+
+[[nodiscard]] std::size_t TcpServer::getPort() const { return port; }
+
+void TcpServer::setPort(const size_t& port) { this->port = port; }
+
+[[nodiscard]] std::string TcpServer::getLevel() const { return level; }
+
+void TcpServer::setFilesplit(const std::size_t& size) {
+    this->filesplit = size;
+}
+
+[[nodiscard]] std::size_t TcpServer::getFilesplitsize() const {
+    return filesplit;
+}
+
 void TcpServer::handleCloseSocket(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     socket_ptr->shutdown(asio::ip::tcp::socket::shutdown_both);
@@ -52,15 +70,13 @@ void TcpServer::handleSignal() {
 }
 
 void TcpServer::readProperties() {
-    std::string ip = "127.0.0.1";
-    size_t port = 8000;
-    std::string level = "info";
     try {
         Properties properties;
         auto value = properties.readProperties();
         ip = value["ip"].asString();
         port = value["port"].asUInt();
         level = value["log"].asString();
+        filesplit = value["filesplit"].asUInt();
     } catch (std::exception& e) {
         warn("{}", e.what());
     }
@@ -99,7 +115,7 @@ TcpServer::handleFileAction(ProtoBuf& protoBuf) {
             return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
-            return file.GetFileDataSplited(65536 * 3);
+            return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
             file.SetFileData(data);
@@ -132,8 +148,7 @@ void TcpServer::handleAccept() {
                           });
 }
 
-void TcpServer::handleRead(
-    std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
+void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     auto streambuf = std::make_shared<asio::streambuf>();
     info("new handle read write");
 

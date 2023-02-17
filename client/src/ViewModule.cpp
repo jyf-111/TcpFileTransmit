@@ -92,7 +92,6 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     }
 
     ImGui::BulletText("path to save on server");
-    ImGui::SameLine();
     ImGui::InputTextWithHint("", "path to save on server", sendToPath,
                              IM_ARRAYSIZE(sendToPath));
 
@@ -101,7 +100,8 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client->handlePost(sendToPath, file.GetFileDataSplited(65536 * 3));
+            client->handlePost(sendToPath,
+                               file.GetFileDataSplited(client->getFilesplitsize()));
         } catch (std::exception &e) {
             error("{}", e.what());
         }

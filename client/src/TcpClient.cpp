@@ -21,6 +21,14 @@ void app::TcpClient::setPort(const size_t &port) { this->port = port; }
 
 [[nodiscard]] std::string app::TcpClient::getLevel() const { return level; }
 
+void app::TcpClient::setFilesplit(const std::size_t &size) {
+    this->filesplit = size;
+}
+
+[[nodiscard]] std::size_t app::TcpClient::getFilesplitsize() const {
+    return filesplit;
+}
+
 void app::TcpClient::setLevel(const std::string &level) {
     if (level == "debug") {
         set_level(spdlog::level::debug);
@@ -46,6 +54,7 @@ void app::TcpClient::readProperties() {
         setIp(value["ip"].asString());
         setPort(value["port"].asUInt());
         setLevel(value["log"].asString());
+        setFilesplit(value["splitsize"].asUInt());
     } catch (std::exception &e) {
         warn("{}", e.what());
     }
