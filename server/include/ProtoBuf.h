@@ -15,7 +15,9 @@
  */
 class ProtoBuf {
    public:
-    /* @brief Method enum */
+    /**
+     * @brief Method enum 
+     */
     enum class Method {
         Query,
         Get,
@@ -222,7 +224,6 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     is.read(reinterpret_cast<char *>(&flag), sizeof(bool));
 
     is >> method >> path;
-    spdlog::info("{} {} {} {}", size, headsize, method, path.string());
     is.ignore();
     std::vector<char> data(size - headsize);
     is.read(&data[0], size - headsize);

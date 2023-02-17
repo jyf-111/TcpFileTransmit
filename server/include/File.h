@@ -56,7 +56,7 @@ class File {
      * @brief Read file data
      * @return File data spilted
      */
-    [[nodiscard]] const std::vector<std::vector<char>> GetFileDataSpilted(
+    [[nodiscard]] const std::vector<std::vector<char>> GetFileDataSplited(
         const std::size_t &slice) const;
 
     /**

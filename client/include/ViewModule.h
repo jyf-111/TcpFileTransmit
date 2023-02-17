@@ -1,4 +1,6 @@
 #pragma once
+#include <memory>
+
 #include "TcpClient.h"
 
 /** @brief Application class */
@@ -21,7 +23,7 @@ class ViewModule {
     /**
      * @brief tcp TcpClient
      */
-    TcpClient client;
+    std::shared_ptr<TcpClient> client = std::make_shared<TcpClient>();
     ViewModule() = default;
     ViewModule(const ViewModule &) = delete;
     ViewModule(ViewModule &&) = delete;

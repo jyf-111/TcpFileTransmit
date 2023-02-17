@@ -11,21 +11,17 @@
 #include "asio/socket_base.hpp"
 #include "spdlog/spdlog.h"
 
-void app::TcpClient::readProperties() {
-    std::string ip = "127.0.0.1";
-    size_t port = 8000;
-    std::string level = "info";
-    try {
-        Properties properties;
-        auto value = properties.readProperties();
-        ip = value["ip"].asString();
-        port = value["port"].asUInt();
-        level = value["log"].asString();
-    } catch (std::exception &e) {
-        warn("{}", e.what());
-    }
+std::string app::TcpClient::getIp() const { return ip; }
 
-    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+void app::TcpClient::setIp(const std::string &ip) { this->ip = ip; }
+
+[[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
+
+void app::TcpClient::setPort(const size_t &port) { this->port = port; }
+
+[[nodiscard]] std::string app::TcpClient::getLevel() const { return level; }
+
+void app::TcpClient::setLevel(const std::string &level) {
     if (level == "debug") {
         set_level(spdlog::level::debug);
     } else if (level == "info") {
@@ -41,6 +37,20 @@ void app::TcpClient::readProperties() {
     } else {
         set_level(spdlog::level::info);
     }
+}
+
+void app::TcpClient::readProperties() {
+    try {
+        Properties properties;
+        auto value = properties.readProperties();
+        setIp(value["ip"].asString());
+        setPort(value["port"].asUInt());
+        setLevel(value["log"].asString());
+    } catch (std::exception &e) {
+        warn("{}", e.what());
+    }
+
+    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
 }
 
 void app::TcpClient::handleResult(std::string &result) {
@@ -91,6 +101,7 @@ void app::TcpClient::handleRead() {
             if (e) {
                 disconnect();
                 error("async_read: {}", e.message());
+                connect();
                 return;
             }
             debug("read complete");
@@ -166,14 +177,15 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
+    debug("connectting");
     tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
         if (e.code()) {
-            debug("connect failed");
+            warn("connect failed");
             connect();
             return;
         }
         connectFlag = true;
-        debug("connect success");
+        info("connect success");
 
         handleRead();
     });
@@ -184,10 +196,9 @@ void app::TcpClient::disconnect() {
         connectFlag = false;
         tcpSocket.shutdown(asio::ip::tcp::socket::shutdown_both);
         tcpSocket.close();
-        io.stop();
-        debug("disconnect success");
+        info("disconnect success");
     } else {
-        debug("client is disconnect,disconnect fail");
+        info("client is disconnect,disconnect fail");
     }
 }
 

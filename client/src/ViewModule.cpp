@@ -10,15 +10,15 @@
 using namespace spdlog;
 
 void app::ViewModule::connect() {
-    client.readProperties();
-    client.run();
-    client.connect();
+    client->readProperties();
+    client->run();
+    client->connect();
 }
 
 void app::ViewModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
-    std::string res = client.getResult();
+    std::string res = client->getResult();
     char *s = const_cast<char *>(res.c_str());
     ImGui::InputTextMultiline("##result", s, res.size(),
                               ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 20),
@@ -37,7 +37,7 @@ void app::ViewModule::render_query_window(bool &show_window) {
     ImGui::SameLine();
     if (ImGui::Button("query")) {
         info("query file: {}", queryPath);
-        client.handleQuery(queryPath);
+        client->handleQuery(queryPath);
     }
     ImGui::End();
 }
@@ -48,12 +48,11 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::Text("get file");
     ImGui::BulletText("Enter the file path to get:");
 
-    ImGui::InputTextWithHint("", "file path", getPath,
-                             IM_ARRAYSIZE(getPath));
+    ImGui::InputTextWithHint("", "file path", getPath, IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
         info("get file: {}", queryPath);
-        client.handleGet(queryPath);
+        client->handleGet(queryPath);
     }
     ImGui::End();
 }
@@ -64,14 +63,14 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     ImGui::Text("transmit file");
     ImGui::BulletText("Enter the file path to transmit:");
 
-    ImGui::Text("%s", selectPath);
-
     ImGui::SameLine();
     // NOTE: open Dialog Simple
     if (ImGui::Button("Open File Dialog"))
         ImGuiFileDialog::Instance()->OpenDialog(
             "ChooseFileDlgKey", " Choose a File", "*.*", ".", "", 1, nullptr,
             ImGuiFileDialogFlags_Modal);
+
+    ImGui::Text("%s", selectPath);
     // display
     if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
         // action if OK
@@ -102,9 +101,9 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client.handlePost(sendToPath, file.GetFileDataSpilted(65536 * 3));
+            client->handlePost(sendToPath, file.GetFileDataSplited(65536 * 3));
         } catch (std::exception &e) {
-            spdlog::error("{}", e.what());
+            error("{}", e.what());
         }
     }
 
@@ -122,11 +121,11 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
 
     ImGui::SameLine();
     if (ImGui::Button("delete")) {
-        info("delete file:");
+        info("delete file: {}", deletePath);
         try {
-            client.handleDelete(deletePath);
+            client->handleDelete(deletePath);
         } catch (std::exception &e) {
-            spdlog::error("{}", e.what());
+            error("{}", e.what());
         }
     }
 

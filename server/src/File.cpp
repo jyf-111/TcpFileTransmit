@@ -33,7 +33,7 @@ std::string File::QueryDirectory() const {
 
 const std::filesystem::path &File::GetFilePath() const { return path; }
 
-const std::vector<std::vector<char>> File::GetFileDataSpilted(
+const std::vector<std::vector<char>>File::GetFileDataSplited(
     const std::size_t &slice) const {
     if (path.empty() || !std::filesystem::is_regular_file(path)) {
         throw std::runtime_error("file path is not valid");

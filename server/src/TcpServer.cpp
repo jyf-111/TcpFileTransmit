@@ -99,7 +99,7 @@ TcpServer::handleFileAction(ProtoBuf& protoBuf) {
             return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
-            return file.GetFileDataSpilted(65536 * 3);
+            return file.GetFileDataSplited(65536 * 3);
         }
         case ProtoBuf::Method::Post: {
             file.SetFileData(data);
