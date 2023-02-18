@@ -8,10 +8,12 @@
 #include <vector>
 
 #include "ProtoBuf.h"
+#include "asio/io_context.hpp"
 
 class TcpServer {
     asio::io_context io;
     asio::ip::tcp::acceptor acceptor{io};
+    asio::io_context::strand writeStrand{io};
     asio::signal_set sig{io, SIGINT, SIGTERM};
 
     std::string ip = "127.0.0.1";
@@ -27,8 +29,8 @@ class TcpServer {
     /**
      * handle File Action
      */
-    std::variant<std::string, std::vector<std::vector<char>>> handleFileAction(
-        ProtoBuf &protoBuf);
+    auto handleFileAction(ProtoBuf &protoBuf)
+        -> std::variant<std::string, std::vector<std::vector<char>>>;
 
     /**
      * handle read

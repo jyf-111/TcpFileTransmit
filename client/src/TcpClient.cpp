@@ -148,14 +148,16 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
           protobuf.GetPath().string());
 
     // NOTE: async_write
-    asio::async_write(tcpSocket, *buf.get(),
-                      [this](const asio::error_code &e, size_t size) {
-                          if (e) {
-                              error("{}", e.message());
-                              return;
-                          }
-                          debug("Send success");
-                      });
+    writeStrand.post([this, buf]() {
+        asio::async_write(tcpSocket, *buf.get(),
+                          [this](const asio::error_code &e, size_t size) {
+                              if (e) {
+                                  error("{}", e.message());
+                                  return;
+                              }
+                              debug("write complete");
+                          });
+    });
 }
 
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {
@@ -166,11 +168,6 @@ void app::TcpClient::handleQuery(const std::filesystem::path &path) {
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
     handleWrite(
         {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
-}
-
-void app::TcpClient::handlePost(const std::filesystem::path &path,
-                                const std::vector<char> &data) {
-    handleWrite({ProtoBuf::Method::Post, path, data});
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,

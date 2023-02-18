@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ProtoBuf.h"
+#include "asio/io_context.hpp"
 
 using namespace spdlog;
 
@@ -18,6 +19,7 @@ class TcpClient {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
     asio::ip::tcp::socket tcpSocket{io};
+    asio::io_context::strand writeStrand{io};
     std::string result;
     bool connectFlag = false;
 
@@ -53,7 +55,6 @@ class TcpClient {
 
     void handleQuery(const std::filesystem::path &);
     void handleGet(const std::filesystem::path &);
-    void handlePost(const std::filesystem::path &, const std::vector<char> &);
     void handlePost(const std::filesystem::path &,
                     const std::vector<std::vector<char>> &);
     void handleDelete(const std::filesystem::path &);

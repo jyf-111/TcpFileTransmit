@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "TcpClient.h"
+#include "imgui.h"
 
 /** @brief Application class */
 namespace app {
@@ -18,6 +19,8 @@ class ViewModule {
     char sendToPath[BUF_SIZE];
     char deletePath[BUF_SIZE];
     char result[BUF_SIZE];
+
+    ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 
    public:
     /**
@@ -54,6 +57,10 @@ class ViewModule {
      * @brief render delete file window function
      */
     void render_delete_file_window(bool &);
+    /**
+     * @brief render setting window function
+     */
+    void render_setting_window(bool &);
 };
 
 }  // namespace app

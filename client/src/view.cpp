@@ -131,6 +131,7 @@ void app::view::loop() {
             viewModule->render_add_file_window(show_window);
             viewModule->render_delete_file_window(show_window);
             viewModule->render_resultUI(show_window);
+            viewModule->render_setting_window(show_window);
         } else {
             viewModule->client->disconnect();
             break;
@@ -143,6 +144,7 @@ void app::view::loop() {
         glViewport(0, 0, display_w, display_h);
 
         ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
         glClearColor(clear_color.x * clear_color.w,
                      clear_color.y * clear_color.w,
                      clear_color.z * clear_color.w, clear_color.w);

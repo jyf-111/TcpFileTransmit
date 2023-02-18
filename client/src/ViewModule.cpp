@@ -5,6 +5,7 @@
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
+#include "TcpClient.h"
 #include "spdlog/common.h"
 
 using namespace spdlog;
@@ -100,8 +101,8 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client->handlePost(sendToPath,
-                               file.GetFileDataSplited(client->getFilesplitsize()));
+            client->handlePost(sendToPath, file.GetFileDataSplited(
+                                               client->getFilesplitsize()));
         } catch (std::exception &e) {
             error("{}", e.what());
         }
@@ -129,5 +130,21 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
         }
     }
 
+    ImGui::End();
+}
+
+void app::ViewModule::render_setting_window(bool &show_window) {
+    static float f = 0.0f;
+
+    ImGui::Begin("setting",&show_window);  // Create a window called "Hello, world!"
+                                    // and append into it.
+
+    ImGui::ColorEdit3("clear color",
+                      (float *)&color);  // Edit 3 floats representing a color
+    auto style = &ImGui::GetStyle();
+    style->Colors[ImGuiCol_WindowBg] = color;
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 }

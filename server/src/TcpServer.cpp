@@ -1,7 +1,6 @@
 #include "TcpServer.h"
 
 #include <spdlog/spdlog.h>
-#include <vcruntime.h>
 
 #include <array>
 #include <filesystem>
@@ -13,7 +12,6 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/streambuf.hpp"
 
 using std::make_shared;
 
@@ -99,8 +97,8 @@ void TcpServer::readProperties() {
     }
 }
 
-std::variant<std::string, std::vector<std::vector<char>>>
-TcpServer::handleFileAction(ProtoBuf& protoBuf) {
+auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
+    -> std::variant<std::string, std::vector<std::vector<char>>> {
     auto method = protoBuf.GetMethod();
     auto path = protoBuf.GetPath();
     auto data = protoBuf.GetData();
@@ -138,7 +136,6 @@ void TcpServer::handleAccept() {
     acceptor.async_accept(*socket_ptr,
                           [this, socket_ptr](const asio::error_code& e) {
                               if (e) {
-                                  handleCloseSocket(socket_ptr);
                                   error("async_accept: " + e.message());
                               } else {
                                   handleRead(socket_ptr);
@@ -217,14 +214,16 @@ void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
     std::ostream os(buf.get());
     os << protobuf;
 
-    asio::async_write(
-        *socket_ptr, *buf,
-        [this, socket_ptr](const asio::error_code& e, size_t size) {
-            if (e) {
-                handleCloseSocket(socket_ptr);
-                error("async_write: {}", e.message());
-                return;
-            }
-            debug("send result to client success");
-        });
+    writeStrand.post([this, socket_ptr, buf]() {
+        asio::async_write(
+            *socket_ptr, *buf,
+            [this, socket_ptr](const asio::error_code& e, size_t size) {
+                if (e) {
+                    handleCloseSocket(socket_ptr);
+                    error("async_write: {}", e.message());
+                    return;
+                }
+                debug("send result to client success");
+            });
+    });
 }
