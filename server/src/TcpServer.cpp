@@ -6,14 +6,12 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <thread>
 #include <variant>
 #include <vector>
 
 #include "File.h"
-#include "Properties.h"
 #include "ProtoBuf.h"
-
-using std::make_shared;
 
 using namespace spdlog;
 
@@ -26,6 +24,22 @@ void TcpServer::setIp(const std::string& ip) { this->ip = ip; }
 void TcpServer::setPort(const size_t& port) { this->port = port; }
 
 [[nodiscard]] std::string TcpServer::getLevel() const { return level; }
+
+void TcpServer::setLevel(const std::string&) {
+    if (level == "debug") {
+        set_level(spdlog::level::debug);
+    } else if (level == "info") {
+        set_level(spdlog::level::info);
+    } else if (level == "warn") {
+        set_level(spdlog::level::warn);
+    } else if (level == "err") {
+        set_level(spdlog::level::err);
+    } else if (level == "critical") {
+        set_level(spdlog::level::critical);
+    } else if (level == "off") {
+        set_level(spdlog::level::off);
+    }
+}
 
 void TcpServer::setFilesplit(const std::size_t& size) {
     this->filesplit = size;
@@ -43,10 +57,19 @@ void TcpServer::handleCloseSocket(
 }
 
 void TcpServer::run() {
-    try {
-        io.run();
-    } catch (asio::system_error& e) {
-        error("Run Error: {}", e.what());
+    auto run = ([this]() {
+        try {
+            io.run();
+        } catch (asio::system_error& e) {
+            error("Run Error: {}", e.what());
+        }
+    });
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 5; i++) {
+        threads.emplace_back(run);
+    }
+    for (auto& thread : threads) {
+        thread.join();
     }
 }
 
@@ -65,36 +88,6 @@ void TcpServer::handleSignal() {
                 info("default {}", e.message());
         }
     });
-}
-
-void TcpServer::readProperties() {
-    try {
-        Properties properties;
-        auto value = properties.readProperties();
-        ip = value["ip"].asString();
-        port = value["port"].asUInt();
-        level = value["log"].asString();
-        filesplit = value["filesplit"].asUInt();
-    } catch (std::exception& e) {
-        warn("{}", e.what());
-    }
-
-    auto ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
-    acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
-
-    if (level == "debug") {
-        set_level(spdlog::level::debug);
-    } else if (level == "info") {
-        set_level(spdlog::level::info);
-    } else if (level == "warn") {
-        set_level(spdlog::level::warn);
-    } else if (level == "err") {
-        set_level(spdlog::level::err);
-    } else if (level == "critical") {
-        set_level(spdlog::level::critical);
-    } else if (level == "off") {
-        set_level(spdlog::level::off);
-    }
 }
 
 auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
@@ -132,6 +125,9 @@ void TcpServer::handleAccept() {
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr =
         std::make_shared<asio::ip::tcp::socket>(io);
 
+    auto ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+    acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
+
     debug("waiting connection");
     acceptor.async_accept(*socket_ptr,
                           [this, socket_ptr](const asio::error_code& e) {
@@ -149,7 +145,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     auto streambuf = std::make_shared<asio::streambuf>();
     info("new handle read write");
 
-    auto peek = make_shared<std::array<char, sizeof(size_t)>>();
+    auto peek = std::make_shared<std::array<char, sizeof(size_t)>>();
     asio::async_read(
         *socket_ptr, *streambuf,
         [peek, streambuf, this, socket_ptr](const asio::system_error& e,
@@ -175,6 +171,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 error("async_read: {}", e.message());
                 return;
             }
+
             debug("read complete");
 
             handleRead(socket_ptr);

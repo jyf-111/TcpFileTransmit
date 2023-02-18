@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "ProtoBuf.h"
-#include "asio/io_context.hpp"
 
 class TcpServer {
     asio::io_context io;
@@ -60,10 +59,6 @@ class TcpServer {
     [[nodiscard]] std::size_t getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
 
-    /**
-     * read properties
-     */
-    void readProperties();
     /**
      * handle signal
      */

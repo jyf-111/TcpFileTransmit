@@ -59,7 +59,6 @@ class TcpClient {
                     const std::vector<std::vector<char>> &);
     void handleDelete(const std::filesystem::path &);
 
-    void readProperties();
     void connect();
     void disconnect();
     bool isConnected();

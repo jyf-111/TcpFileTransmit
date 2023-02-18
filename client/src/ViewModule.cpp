@@ -11,7 +11,6 @@
 using namespace spdlog;
 
 void app::ViewModule::connect() {
-    client->readProperties();
     client->run();
     client->connect();
 }

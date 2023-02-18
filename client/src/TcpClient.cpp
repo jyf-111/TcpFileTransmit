@@ -47,21 +47,6 @@ void app::TcpClient::setLevel(const std::string &level) {
     }
 }
 
-void app::TcpClient::readProperties() {
-    try {
-        Properties properties;
-        auto value = properties.readProperties();
-        setIp(value["ip"].asString());
-        setPort(value["port"].asUInt());
-        setLevel(value["log"].asString());
-        setFilesplit(value["splitsize"].asUInt());
-    } catch (std::exception &e) {
-        warn("{}", e.what());
-    }
-
-    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
-}
-
 void app::TcpClient::handleResult(std::string &result) {
     result.clear();
     std::time_t t = std::time(nullptr);
@@ -184,6 +169,8 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 
 void app::TcpClient::connect() {
     debug("connectting");
+    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+
     tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
         if (e.code()) {
             warn("connect failed");
