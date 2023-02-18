@@ -5,6 +5,7 @@
 
 namespace app {
 class view {
+
     std::shared_ptr<app::ViewModule> viewModule =
         std::make_shared<app::ViewModule>();
     GLFWwindow* window;
