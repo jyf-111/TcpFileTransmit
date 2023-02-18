@@ -21,7 +21,7 @@ void TcpServer::setIp(const std::string& ip) { this->ip = ip; }
 
 [[nodiscard]] std::size_t TcpServer::getPort() const { return port; }
 
-void TcpServer::setPort(const size_t& port) { this->port = port; }
+void TcpServer::setPort(const std::size_t& port) { this->port = port; }
 
 [[nodiscard]] std::string TcpServer::getLevel() const { return level; }
 
@@ -145,27 +145,27 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     auto streambuf = std::make_shared<asio::streambuf>();
     info("new handle read write");
 
-    auto peek = std::make_shared<std::array<char, sizeof(size_t)>>();
+    auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
     asio::async_read(
         *socket_ptr, *streambuf,
         [peek, streambuf, this, socket_ptr](const asio::system_error& e,
-                                            size_t size) -> size_t {
+                                            std::size_t size) -> std::size_t {
             if (e.code()) {
                 error("async_reading: {}", e.what());
                 return 0;
             }
-            if (size == sizeof(size_t)) {
+            if (size == sizeof(std::size_t)) {
                 std::memcpy(peek.get(), streambuf.get()->data().data(),
-                            sizeof(size_t));
+                            sizeof(std::size_t));
             }
-            if (size > sizeof(size_t) &&
-                size == *reinterpret_cast<size_t*>(peek.get())) {
+            if (size > sizeof(std::size_t) &&
+                size == *reinterpret_cast<std::size_t*>(peek.get())) {
                 return 0;
             } else {
                 return 1;
             }
         },
-        [streambuf, socket_ptr, this](const asio::error_code& e, size_t size) {
+        [streambuf, socket_ptr, this](const asio::error_code& e, std::size_t size) {
             if (e) {
                 handleCloseSocket(socket_ptr);
                 error("async_read: {}", e.message());
@@ -214,7 +214,7 @@ void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
     writeStrand.post([this, socket_ptr, buf]() {
         asio::async_write(
             *socket_ptr, *buf,
-            [this, socket_ptr](const asio::error_code& e, size_t size) {
+            [this, socket_ptr](const asio::error_code& e, std::size_t size) {
                 if (e) {
                     handleCloseSocket(socket_ptr);
                     error("async_write: {}", e.message());

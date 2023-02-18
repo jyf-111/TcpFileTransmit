@@ -219,8 +219,8 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     bool flag;
     std::string method;
     std::filesystem::path path;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
-    is.read(reinterpret_cast<char *>(&headsize), sizeof(size_t));
+    is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
+    is.read(reinterpret_cast<char *>(&headsize), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&flag), sizeof(bool));
 
     is >> method >> path;

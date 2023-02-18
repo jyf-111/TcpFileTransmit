@@ -24,7 +24,7 @@ class TcpClient {
     bool connectFlag = false;
 
     std::string ip = "127.0.0.1";
-    size_t port = 8000;
+    std::size_t port = 8000;
     std::string level = "info";
     std::size_t filesplit = 65536 * 3;
 
@@ -47,7 +47,7 @@ class TcpClient {
     [[nodiscard]] std::string getIp() const;
     void setIp(const std::string &);
     [[nodiscard]] std::size_t getPort() const;
-    void setPort(const size_t &);
+    void setPort(const std::size_t &);
     [[nodiscard]] std::string getLevel() const;
     void setLevel(const std::string &);
     [[nodiscard]] std::size_t getFilesplitsize() const;

@@ -17,7 +17,7 @@ void app::TcpClient::setIp(const std::string &ip) { this->ip = ip; }
 
 [[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
 
-void app::TcpClient::setPort(const size_t &port) { this->port = port; }
+void app::TcpClient::setPort(const std::size_t &port) { this->port = port; }
 
 [[nodiscard]] std::string app::TcpClient::getLevel() const { return level; }
 
@@ -70,28 +70,28 @@ void app::TcpClient::handleRead() {
     auto resultBuf = std::make_shared<asio::streambuf>();
 
     auto streambuf = std::make_shared<asio::streambuf>();
-    auto peek = std::make_shared<std::array<char, sizeof(size_t)>>();
+    auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
     asio::async_read(
         tcpSocket, *streambuf,
         [peek, streambuf, this](const asio::system_error &e,
-                                size_t size) -> size_t {
+                                std::size_t size) -> std::size_t {
             if (e.code()) {
                 error("async_reading: {}", e.what());
                 return 0;
             }
-            if (size == sizeof(size_t)) {
+            if (size == sizeof(std::size_t)) {
                 std::memcpy(peek.get(), streambuf.get()->data().data(),
-                            sizeof(size_t));
+                            sizeof(std::size_t));
             }
-            if (size > sizeof(size_t) &&
-                size == *reinterpret_cast<size_t *>(peek.get())) {
+            if (size > sizeof(std::size_t) &&
+                size == *reinterpret_cast<std::size_t *>(peek.get())) {
                 return 0;
             } else {
                 return 1;
             }
         },
-        [streambuf, this](const asio::error_code &e, size_t size) {
+        [streambuf, this](const asio::error_code &e, std::size_t size) {
             if (e) {
                 disconnect();
                 error("async_read: {}", e.message());
@@ -135,7 +135,7 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     // NOTE: async_write
     writeStrand.post([this, buf]() {
         asio::async_write(tcpSocket, *buf.get(),
-                          [this](const asio::error_code &e, size_t size) {
+                          [this](const asio::error_code &e, std::size_t size) {
                               if (e) {
                                   error("{}", e.message());
                                   return;

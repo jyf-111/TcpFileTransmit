@@ -53,7 +53,7 @@ class TcpServer {
     [[nodiscard]] std::string getIp() const;
     void setIp(const std::string &);
     [[nodiscard]] std::size_t getPort() const;
-    void setPort(const size_t &);
+    void setPort(const std::size_t &);
     [[nodiscard]] std::string getLevel() const;
     void setLevel(const std::string &);
     [[nodiscard]] std::size_t getFilesplitsize() const;
