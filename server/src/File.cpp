@@ -66,7 +66,6 @@ void File::SetFileData(const std::vector<char> &data) const {
     std::ofstream ofs(path, std::ios::binary | std::ios::app);
     ofs.write(data.data(), data.size());
     ofs.close();
-    debug("Writing to file {} ", path.string());
 }
 
 void File::DeleteActualFile() const {

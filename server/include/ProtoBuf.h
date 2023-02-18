@@ -16,7 +16,7 @@
 class ProtoBuf {
    public:
     /**
-     * @brief Method enum 
+     * @brief Method enum
      */
     enum class Method {
         Query,
@@ -65,15 +65,37 @@ class ProtoBuf {
     void SetHeadSize(const std::size_t &);
 
     /**
-     * @brief Method for get continue_ falg
+     * @brief Method for get isFile
+     * @return const bool
      */
     [[nodiscard]] const bool &GetIsFile() const;
 
     /**
-     * @brief Method for set continue_ falg
+     * @brief Method for set isFile
      */
     void SetIsFile(const bool &);
 
+    /**
+     * @brief Method for get index
+     * @return const std::size_t
+     */
+    [[nodiscard]] const std::size_t &GetIndex() const;
+
+    /**
+     * @brief Method for set index
+     */
+    void SetIndex(const std::size_t &);
+
+    /**
+     * @brief Method for get total
+     * @return const std::size_t
+     */
+    [[nodiscard]] const std::size_t &GetTotal() const;
+
+    /**
+     * @brief Method for set total
+     */
+    inline void SetTotal(const std::size_t &total);
     /**
      * @brief Method for get method
      * @return Method
@@ -120,6 +142,8 @@ class ProtoBuf {
     std::size_t size;
     std::size_t headsize;
     bool isFile = false;
+    std::size_t index = 0;
+    std::size_t total = 0;
     Method method;
     std::filesystem::path path;
     std::vector<char> data;
@@ -132,7 +156,7 @@ inline ProtoBuf::ProtoBuf(const Method &method,
     this->path = path;
     this->data = data;
 
-    this->headsize = 2 * sizeof(std::size_t) +
+    this->headsize = 4 * sizeof(std::size_t) +
                      ProtoBuf::MethodToString(method).size() +
                      path.string().size() + 3;
     this->size = headsize + data.size();
@@ -180,8 +204,18 @@ inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
 
 inline const bool &ProtoBuf::GetIsFile() const { return this->isFile; }
 
-inline void ProtoBuf::SetIsFile(const bool &isFile) {
-    this->isFile = isFile;
+inline void ProtoBuf::SetIsFile(const bool &isFile) { this->isFile = isFile; }
+
+inline const std::size_t &ProtoBuf::GetIndex() const { return this->index; }
+
+inline void ProtoBuf::SetIndex(const std::size_t &index) {
+    this->index = index;
+}
+
+inline const std::size_t &ProtoBuf::GetTotal() const { return this->total; }
+
+inline void ProtoBuf::SetTotal(const std::size_t &total) {
+    this->total = total;
 }
 
 inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
@@ -205,6 +239,10 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
              sizeof(std::size_t));
     os.write(reinterpret_cast<const char *>(&protoBuf.GetIsFile()),
              sizeof(bool));
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetIndex()),
+             sizeof(std::size_t));
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetTotal()),
+             sizeof(std::size_t));
     os << ProtoBuf::MethodToString(protoBuf.method) + " " +
               protoBuf.path.string() + " ";
 
@@ -217,11 +255,15 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::size_t size;
     std::size_t headsize;
     bool isFile;
+    std::size_t index;
+    std::size_t total;
     std::string method;
     std::filesystem::path path;
     is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&headsize), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&isFile), sizeof(bool));
+    is.read(reinterpret_cast<char *>(&index), sizeof(std::size_t));
+    is.read(reinterpret_cast<char *>(&total), sizeof(std::size_t));
 
     is >> method >> path;
     is.ignore();
@@ -231,6 +273,8 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     protoBuf.SetSize(size);
     protoBuf.SetHeadSize(headsize);
     protoBuf.SetIsFile(isFile);
+    protoBuf.SetIndex(index);
+    protoBuf.SetTotal(total);
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);

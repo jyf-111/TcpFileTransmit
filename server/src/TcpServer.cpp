@@ -98,9 +98,6 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
 
     File file(path);
 
-    debug("method: {} path: {} ", ProtoBuf::MethodToString(method),
-          path.string());
-
     switch (method) {
         case ProtoBuf::Method::Query: {
             return file.QueryDirectory();
@@ -110,7 +107,18 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
         }
         case ProtoBuf::Method::Post: {
             file.SetFileData(data);
-            return "add file ok";
+            auto index = protoBuf.GetIndex();
+            auto total = protoBuf.GetTotal();
+            if (index < total) {
+                return "client saving file : " + std::to_string(index) + "/" +
+                       std::to_string(total);
+            } else if (index == total) {
+                return "client saving file : " + std::to_string(index) + "/" +
+                       std::to_string(total) + " OK";
+            } else {
+                error("index > total");
+                return "error: index > total";
+            }
         }
         case ProtoBuf::Method::Delete:
             file.DeleteActualFile();
@@ -142,8 +150,8 @@ void TcpServer::handleAccept() {
 }
 
 void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
+    debug("new read");
     auto streambuf = std::make_shared<asio::streambuf>();
-    info("new handle read write");
 
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
     asio::async_read(
@@ -198,9 +206,13 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
             } else {
                 const auto& vec =
                     std::get<std::vector<std::vector<char>>>(result);
-                for (const auto& v : vec) {
-                    ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(), v};
+                const auto& len = vec.size();
+                for (std::size_t i = 0; i < len; i++) {
+                    ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
+                                 vec.at(i)};
                     ret.SetIsFile(true);
+                    ret.SetIndex(i);
+                    ret.SetTotal(len - 1);
                     handleWrite(socket_ptr, ret);
                 }
             }
@@ -208,6 +220,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
 }
 void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
                             const ProtoBuf& protobuf) {
+    debug("new write");
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os(buf.get());
     os << protobuf;

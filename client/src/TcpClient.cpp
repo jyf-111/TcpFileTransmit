@@ -1,15 +1,16 @@
 #include "TcpClient.h"
 
+#include <spdlog/spdlog.h>
+
 #include <filesystem>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/socket_base.hpp"
-#include "spdlog/spdlog.h"
 
 std::string app::TcpClient::getIp() const { return ip; }
 
@@ -111,6 +112,17 @@ void app::TcpClient::handleRead() {
             if (isFile) {
                 File file(protoBuf.GetPath());
                 file.SetFileData(protoBuf.GetData());
+                const auto &index = protoBuf.GetIndex();
+                const auto &total = protoBuf.GetTotal();
+                if (index < total) {
+                    result += "get file: " + protoBuf.GetPath().string() +
+                              std::to_string(index) + "/" +
+                              std::to_string(total);
+                } else if (index == total) {
+                    result += "get file: " + protoBuf.GetPath().string() +
+                              std::to_string(index) + "/" +
+                              std::to_string(total) + "ok";
+                }
             } else {
                 const auto &data = protoBuf.GetData();
                 result += std::string(data.begin(), data.end());
@@ -125,12 +137,10 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
         return;
     }
 
-    debug("new read and write");
+    debug("new write");
     auto buf = std::make_shared<asio::streambuf>();
     auto os = std::make_shared<std::ostream>(buf.get());
     *os << protobuf;
-    debug("Send: {} {} ", ProtoBuf::MethodToString(protobuf.GetMethod()),
-          protobuf.GetPath().string());
 
     // NOTE: async_write
     writeStrand.post([this, buf]() {
@@ -158,8 +168,12 @@ void app::TcpClient::handleGet(const std::filesystem::path &path) {
 void app::TcpClient::handlePost(const std::filesystem::path &path,
                                 const std::vector<std::vector<char>> &data) {
     const auto lenth = data.size();
-    for (int i = 0; i < lenth; i++)
-        handleWrite({ProtoBuf::Method::Post, path, data.at(i)});
+    for (int i = 0; i < lenth; i++) {
+        ProtoBuf protobuf{ProtoBuf::Method::Post, path, data.at(i)};
+        protobuf.SetIndex(i);
+        protobuf.SetTotal(lenth - 1);
+        handleWrite(protobuf);
+    }
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
