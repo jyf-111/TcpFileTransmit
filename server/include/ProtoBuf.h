@@ -67,12 +67,12 @@ class ProtoBuf {
     /**
      * @brief Method for get continue_ falg
      */
-    [[nodiscard]] const bool &GetFlag() const;
+    [[nodiscard]] const bool &GetIsFile() const;
 
     /**
      * @brief Method for set continue_ falg
      */
-    void SetFlag(const bool &);
+    void SetIsFile(const bool &);
 
     /**
      * @brief Method for get method
@@ -119,7 +119,7 @@ class ProtoBuf {
    private:
     std::size_t size;
     std::size_t headsize;
-    bool flag = false;
+    bool isFile = false;
     Method method;
     std::filesystem::path path;
     std::vector<char> data;
@@ -178,10 +178,10 @@ inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
     this->headsize = headsize;
 }
 
-inline const bool &ProtoBuf::GetFlag() const { return this->flag; }
+inline const bool &ProtoBuf::GetIsFile() const { return this->isFile; }
 
-inline void ProtoBuf::SetFlag(const bool &flag) {
-    this->flag = flag;
+inline void ProtoBuf::SetIsFile(const bool &isFile) {
+    this->isFile = isFile;
 }
 
 inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
@@ -203,7 +203,7 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
              sizeof(std::size_t));
     os.write(reinterpret_cast<const char *>(&protoBuf.GetHeadSize()),
              sizeof(std::size_t));
-    os.write(reinterpret_cast<const char *>(&protoBuf.GetFlag()),
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetIsFile()),
              sizeof(bool));
     os << ProtoBuf::MethodToString(protoBuf.method) + " " +
               protoBuf.path.string() + " ";
@@ -216,12 +216,12 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
 inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::size_t size;
     std::size_t headsize;
-    bool flag;
+    bool isFile;
     std::string method;
     std::filesystem::path path;
     is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&headsize), sizeof(std::size_t));
-    is.read(reinterpret_cast<char *>(&flag), sizeof(bool));
+    is.read(reinterpret_cast<char *>(&isFile), sizeof(bool));
 
     is >> method >> path;
     is.ignore();
@@ -230,7 +230,7 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
 
     protoBuf.SetSize(size);
     protoBuf.SetHeadSize(headsize);
-    protoBuf.SetFlag(flag);
+    protoBuf.SetIsFile(isFile);
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);

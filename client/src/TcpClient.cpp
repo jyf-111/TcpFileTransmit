@@ -107,13 +107,13 @@ void app::TcpClient::handleRead() {
             is >> protoBuf;
 
             handleResult(result);
-            const bool flag = protoBuf.GetFlag();
-            if (flag) {
-                const auto &data = protoBuf.GetData();
-                result += std::string(data.begin(), data.end());
-            } else {
+            const bool isFile = protoBuf.GetIsFile();
+            if (isFile) {
                 File file(protoBuf.GetPath());
                 file.SetFileData(protoBuf.GetData());
+            } else {
+                const auto &data = protoBuf.GetData();
+                result += std::string(data.begin(), data.end());
             }
         });
 }

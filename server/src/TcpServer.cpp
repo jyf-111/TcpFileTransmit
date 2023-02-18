@@ -165,7 +165,8 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 return 1;
             }
         },
-        [streambuf, socket_ptr, this](const asio::error_code& e, std::size_t size) {
+        [streambuf, socket_ptr, this](const asio::error_code& e,
+                                      std::size_t size) {
             if (e) {
                 handleCloseSocket(socket_ptr);
                 error("async_read: {}", e.message());
@@ -192,7 +193,6 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
 
                 ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
                              std::vector<char>(str.begin(), str.end())};
-                ret.SetFlag(true);
                 handleWrite(socket_ptr, ret);
 
             } else {
@@ -200,6 +200,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                     std::get<std::vector<std::vector<char>>>(result);
                 for (const auto& v : vec) {
                     ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(), v};
+                    ret.SetIsFile(true);
                     handleWrite(socket_ptr, ret);
                 }
             }
