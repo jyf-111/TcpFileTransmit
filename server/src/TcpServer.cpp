@@ -52,7 +52,6 @@ void TcpServer::setFilesplit(const std::size_t& size) {
 
 void TcpServer::handleCloseSocket(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
-    socket_ptr->shutdown(asio::ip::tcp::socket::shutdown_both);
     socket_ptr->close();
     info("socket close");
 }

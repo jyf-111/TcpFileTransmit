@@ -126,12 +126,12 @@ void app::view::loop() {
 
         // start your code here
         if (show_window) {
-            viewModule->render_get_window(show_window);
-            viewModule->render_query_window(show_window);
-            viewModule->render_add_file_window(show_window);
-            viewModule->render_delete_file_window(show_window);
-            viewModule->render_resultUI(show_window);
             viewModule->render_setting_window(show_window);
+            viewModule->render_resultUI(show_window);
+            viewModule->render_delete_file_window(show_window);
+            viewModule->render_add_file_window(show_window);
+            viewModule->render_query_window(show_window);
+            viewModule->render_get_window(show_window);
         } else {
             viewModule->client->disconnect();
             break;

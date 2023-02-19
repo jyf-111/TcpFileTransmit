@@ -35,7 +35,7 @@ const std::filesystem::path &File::GetFilePath() const { return path; }
 
 const std::vector<std::vector<char>> File::GetFileDataSplited(
     const std::size_t &slice) const {
-    if (path.empty()) {
+    if (path.empty() || !std::filesystem::is_regular_file(path)) {
         throw std::runtime_error("file path is not valid");
     }
     std::ifstream ifs(path, std::ios::binary);

@@ -132,13 +132,13 @@ void app::TcpClient::handleRead() {
                 const auto &index = protoBuf.GetIndex();
                 const auto &total = protoBuf.GetTotal();
                 if (index < total) {
-                    result += "get file: " + protoBuf.GetPath().string() +
+                    result += "get file: " + protoBuf.GetPath().string() + " " +
                               std::to_string(index) + "/" +
                               std::to_string(total);
                 } else if (index == total) {
-                    result += "get file: " + protoBuf.GetPath().string() +
+                    result += "get file: " + protoBuf.GetPath().string() + " " +
                               std::to_string(index) + "/" +
-                              std::to_string(total) + "ok";
+                              std::to_string(total) + " ok";
                 }
             } else {
                 const auto &data = protoBuf.GetData();
@@ -218,11 +218,11 @@ void app::TcpClient::connect() {
 void app::TcpClient::disconnect() {
     if (connectFlag) {
         connectFlag = false;
-        tcpSocket.shutdown(asio::ip::tcp::socket::shutdown_both);
         tcpSocket.close();
+        io.stop();
         info("disconnect success");
     } else {
-        info("client is disconnect,disconnect fail");
+        info("client is disconnect");
     }
 }
 
