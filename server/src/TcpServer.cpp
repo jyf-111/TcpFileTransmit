@@ -25,7 +25,8 @@ void TcpServer::setPort(const std::size_t& port) { this->port = port; }
 
 [[nodiscard]] std::string TcpServer::getLevel() const { return level; }
 
-void TcpServer::setLevel(const std::string&) {
+void TcpServer::setLevel(const std::string& level) {
+    this->level = level;
     if (level == "debug") {
         set_level(spdlog::level::debug);
     } else if (level == "info") {
@@ -103,6 +104,7 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
             return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
+            debug("Get {}", path.string());
             return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
@@ -110,10 +112,10 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
             auto index = protoBuf.GetIndex();
             auto total = protoBuf.GetTotal();
             if (index < total) {
-                return "client saving file : " + std::to_string(index) + "/" +
+                return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total);
             } else if (index == total) {
-                return "client saving file : " + std::to_string(index) + "/" +
+                return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total) + " OK";
             } else {
                 error("index > total");

@@ -18,6 +18,7 @@ namespace app {
 class TcpClient {
     asio::io_service io;
     asio::ip::tcp::endpoint ep;
+    std::string domain;
     asio::ip::tcp::socket tcpSocket{io};
     asio::io_context::strand writeStrand{io};
     std::string result;
@@ -46,6 +47,8 @@ class TcpClient {
    public:
     [[nodiscard]] std::string getIp() const;
     void setIp(const std::string &);
+    [[nodiscard]] std::string getDomain() const;
+    void setDomain(const std::string &);
     [[nodiscard]] std::size_t getPort() const;
     void setPort(const std::size_t &);
     [[nodiscard]] std::string getLevel() const;

@@ -11,10 +11,17 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "asio/error_code.hpp"
 
 std::string app::TcpClient::getIp() const { return ip; }
 
 void app::TcpClient::setIp(const std::string &ip) { this->ip = ip; }
+
+std::string app::TcpClient::getDomain() const { return this->domain; }
+
+void app::TcpClient::setDomain(const std::string &domain) {
+    this->domain = domain;
+}
 
 [[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
 

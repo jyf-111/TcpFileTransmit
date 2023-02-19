@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+using namespace spdlog;
+
 /**
  * @brief Class for ProtoBuf
  */
@@ -138,6 +140,11 @@ class ProtoBuf {
      */
     friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
 
+    /**
+     * @brief Method for get item as a string
+     */
+    [[nodiscard]] const std::string toString() const;
+
    private:
     std::size_t size;
     std::size_t headsize;
@@ -246,6 +253,7 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
     os << ProtoBuf::MethodToString(protoBuf.method) + " " +
               protoBuf.path.string() + " ";
 
+    debug("send {}", protoBuf.toString());
     const auto &data = protoBuf.GetData();
     os.write(data.data(), data.size());
     return os;
@@ -264,7 +272,6 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     is.read(reinterpret_cast<char *>(&isFile), sizeof(bool));
     is.read(reinterpret_cast<char *>(&index), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&total), sizeof(std::size_t));
-
     is >> method >> path;
     is.ignore();
     std::vector<char> data(size - headsize);
@@ -278,5 +285,13 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);
+    debug("recv {}", protoBuf.toString());
     return is;
+}
+
+inline const std::string ProtoBuf::toString() const {
+    return "protobuf " + std::to_string(size) + " " + std::to_string(headsize) +
+           " " + std::to_string(isFile) + " " + std::to_string(index) + " " +
+           std::to_string(total) + " " + MethodToString(method) + " " +
+           path.string();
 }

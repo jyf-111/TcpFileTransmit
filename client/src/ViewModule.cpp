@@ -65,8 +65,8 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::InputTextWithHint("", "file path", getPath, IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
-        info("get file: {}", queryPath);
-        client->handleGet(queryPath);
+        info("get file: {}", getPath);
+        client->handleGet(getPath);
     }
     ImGui::End();
 }
