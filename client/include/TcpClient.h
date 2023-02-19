@@ -20,6 +20,7 @@ class TcpClient {
     asio::ip::tcp::endpoint ep;
     std::string domain;
     asio::ip::tcp::socket tcpSocket{io};
+    asio::ip::tcp::resolver resolver{io};
     asio::io_context::strand writeStrand{io};
     std::string result;
     bool connectFlag = false;

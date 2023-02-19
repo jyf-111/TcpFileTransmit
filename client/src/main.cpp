@@ -17,6 +17,8 @@ class Controller {
             auto value = properties.readProperties();
             view->GetViewModule()->client->setIp(value["ip"].asString());
             view->GetViewModule()->client->setPort(value["port"].asUInt());
+            view->GetViewModule()->client->setDomain(
+                value["domain"].asString());
             view->GetViewModule()->client->setLevel(value["log"].asString());
             view->GetViewModule()->client->setFilesplit(
                 value["splitsize"].asUInt());

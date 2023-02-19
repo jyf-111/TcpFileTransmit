@@ -3,7 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
-#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -11,7 +10,8 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/error_code.hpp"
+
+using namespace spdlog;
 
 std::string app::TcpClient::getIp() const { return ip; }
 
@@ -21,6 +21,16 @@ std::string app::TcpClient::getDomain() const { return this->domain; }
 
 void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
+
+    resolver.async_resolve(domain, std::to_string(port),
+                           [this](const asio::error_code &e,
+                                  asio::ip::tcp::resolver::iterator iter) {
+                               if (e) {
+                                   error("query Error: {}", e.message());
+                                   return;
+                               }
+                               setIp(iter->endpoint().address().to_string());
+                           });
 }
 
 [[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
@@ -199,7 +209,7 @@ void app::TcpClient::connect() {
             return;
         }
         connectFlag = true;
-        info("connect success");
+        info("connect success {}:{}", ip, port);
 
         handleRead();
     });
