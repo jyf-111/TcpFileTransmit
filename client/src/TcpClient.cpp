@@ -3,12 +3,14 @@
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "asio/socket_base.hpp"
 
 using namespace spdlog;
 
@@ -20,16 +22,18 @@ std::string app::TcpClient::getDomain() const { return this->domain; }
 
 void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
+
     if (domain.size() != 0) {
         resolver.async_resolve(
             domain, std::to_string(port),
-            [this](const asio::error_code &e,
-                   asio::ip::tcp::resolver::iterator iter) {
+            [self = shared_from_this()](
+                const asio::error_code &e,
+                asio::ip::tcp::resolver::iterator iter) {
                 if (e) {
                     error("query Error: {}", e.message());
                     return;
                 }
-                setIp(iter->endpoint().address().to_string());
+                self->setIp(iter->endpoint().address().to_string());
             });
     }
 }
@@ -93,8 +97,8 @@ void app::TcpClient::handleRead() {
 
     asio::async_read(
         tcpSocket, *streambuf,
-        [peek, streambuf, this](const asio::system_error &e,
-                                std::size_t size) -> std::size_t {
+        [peek, streambuf](const asio::system_error &e,
+                          std::size_t size) -> std::size_t {
             if (e.code()) {
                 error("async_reading: {}", e.what());
                 return 0;
@@ -110,22 +114,23 @@ void app::TcpClient::handleRead() {
                 return 1;
             }
         },
-        [streambuf, this](const asio::error_code &e, std::size_t size) {
+        [streambuf, self = shared_from_this()](const asio::error_code &e,
+                                               std::size_t size) {
             if (e) {
-                disconnect();
+                self->disconnect();
                 error("async_read: {}", e.message());
-                connect();
+                self->connect();
                 return;
             }
             debug("read complete");
 
-            handleRead();
+            self->handleRead();
 
             ProtoBuf protoBuf;
             std::istream is(streambuf.get());
             is >> protoBuf;
 
-            handleResult(result);
+            self->handleResult(self->result);
             const bool isFile = protoBuf.GetIsFile();
             if (isFile) {
                 File file(protoBuf.GetPath());
@@ -133,17 +138,17 @@ void app::TcpClient::handleRead() {
                 const auto &index = protoBuf.GetIndex();
                 const auto &total = protoBuf.GetTotal();
                 if (index < total) {
-                    result += "get file: " + protoBuf.GetPath().string() + " " +
-                              std::to_string(index) + "/" +
-                              std::to_string(total);
+                    self->result += "get file: " + protoBuf.GetPath().string() +
+                                    " " + std::to_string(index) + "/" +
+                                    std::to_string(total);
                 } else if (index == total) {
-                    result += "get file: " + protoBuf.GetPath().string() + " " +
-                              std::to_string(index) + "/" +
-                              std::to_string(total) + " ok";
+                    self->result += "get file: " + protoBuf.GetPath().string() +
+                                    " " + std::to_string(index) + "/" +
+                                    std::to_string(total) + " ok";
                 }
             } else {
                 const auto &data = protoBuf.GetData();
-                result += std::string(data.begin(), data.end());
+                self->result += std::string(data.begin(), data.end());
             }
         });
 }
@@ -161,9 +166,9 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     *os << protobuf;
 
     // NOTE: async_write
-    writeStrand.post([this, buf]() {
-        asio::async_write(tcpSocket, *buf.get(),
-                          [this](const asio::error_code &e, std::size_t size) {
+    writeStrand.post([self = shared_from_this(), buf]() {
+        asio::async_write(self->tcpSocket, *buf.get(),
+                          [](const asio::error_code &e, std::size_t size) {
                               if (e) {
                                   error("{}", e.message());
                                   return;
@@ -201,16 +206,20 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 
 void app::TcpClient::connect() {
     debug("connectting");
-    ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
-
+    static asio::ip::tcp::endpoint ep =
+        asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
+    ;
     tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
         if (e.code()) {
             warn("connect failed");
+            // NOTE:
+            // windows 20s
+            // linux 127s
             connect();
             return;
         }
         connectFlag = true;
-        info("connect success {}:{}", ip, port);
+        info("connect {}:{} success ", ip, port);
 
         handleRead();
     });
@@ -220,7 +229,6 @@ void app::TcpClient::disconnect() {
     if (connectFlag) {
         connectFlag = false;
         tcpSocket.close();
-        io.stop();
         info("disconnect success");
     } else {
         info("client is disconnect");

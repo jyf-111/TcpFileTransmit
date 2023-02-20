@@ -14,9 +14,8 @@ namespace app {
 /**
  * @brief TcpClient
  */
-class TcpClient {
+class TcpClient : public std::enable_shared_from_this<TcpClient> {
     asio::io_service io;
-    asio::ip::tcp::endpoint ep;
     std::string domain;
     asio::ip::tcp::socket tcpSocket{io};
     asio::ip::tcp::resolver resolver{io};

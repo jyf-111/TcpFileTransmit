@@ -9,7 +9,7 @@
 
 #include "ProtoBuf.h"
 
-class TcpServer {
+class TcpServer : public std::enable_shared_from_this<TcpServer> {
     asio::io_context io;
     asio::ip::tcp::acceptor acceptor{io};
     asio::io_context::strand writeStrand{io};
@@ -19,7 +19,7 @@ class TcpServer {
     std::size_t port = 8000;
     std::string level = "info";
     std::size_t filesplit = 65536 * 4;
-    std::size_t threads ;
+    std::size_t threads;
     /**
      * handle close socket
      */

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <asio.hpp>
+#include <memory>
 
 #include "Properties.h"
 #include "TcpServer.h"
@@ -9,10 +10,10 @@
 using namespace spdlog;
 
 class Controller {
-    std::unique_ptr<TcpServer> server;
+    std::shared_ptr<TcpServer> server;
 
    public:
-    Controller(std::unique_ptr<TcpServer> server) : server(std::move(server)) {}
+    Controller(std::shared_ptr<TcpServer> server) : server(std::move(server)) {}
     void readProperties() {
         try {
             Properties properties;
@@ -22,7 +23,7 @@ class Controller {
             server->setLevel(value["log"].asString());
             server->setFilesplit(value["splitsize"].asUInt64());
             server->setThreads(value["threads"].asUInt());
-            info("ip:{} port:{} levvel:{} filesplit:{} threads:{}",
+            info("ip:{} port:{} level:{} filesplit:{} threads:{}",
                  server->getIp(), server->getPort(), server->getLevel(),
                  server->getFilesplitsize(), server->getThreads());
         } catch (std::exception& e) {
@@ -37,7 +38,7 @@ class Controller {
 };
 
 int main(int argc, char* argv[]) {
-    auto server = std::make_unique<TcpServer>();
+    auto server = std::make_shared<TcpServer>();
 
     Controller controller(std::move(server));
     controller.readProperties();
