@@ -33,8 +33,15 @@ class Controller {
 };
 
 int main(int, char**) {
-    auto view = std::make_unique<app::view>();
 
+#ifdef _WIN32
+    HWND hwnd = GetForegroundWindow();
+    if (hwnd) {
+        ShowWindow(hwnd, SW_HIDE);
+    }
+#endif
+
+    auto view = std::make_unique<app::view>();
     Controller controller(std::move(view));
     controller.readProperties();
     controller.run();

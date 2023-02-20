@@ -87,7 +87,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
     }
 
     ImGui::BulletText("Enter the file path to get on server:");
-    ImGui::InputTextWithHint("get  file", "file path", getPath,
+    ImGui::InputTextWithHint(" get file", "file path", getPath,
                              IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
