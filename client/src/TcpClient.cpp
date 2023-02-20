@@ -10,7 +10,6 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/socket_base.hpp"
 
 using namespace spdlog;
 
@@ -70,8 +69,7 @@ void app::TcpClient::setLevel(const std::string &level) {
     }
 }
 
-void app::TcpClient::handleResult(std::string &result) {
-    result.clear();
+void app::TcpClient::handleOutPutTime(std::string &result) {
     std::time_t t = std::time(nullptr);
     std::tm *now = std::localtime(&t);
 
@@ -91,7 +89,6 @@ void app::TcpClient::handleResult(std::string &result) {
 void app::TcpClient::handleRead() {
     if (!connectFlag) throw std::runtime_error("not connected");
     auto resultBuf = std::make_shared<asio::streambuf>();
-
     auto streambuf = std::make_shared<asio::streambuf>();
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
@@ -130,25 +127,37 @@ void app::TcpClient::handleRead() {
             std::istream is(streambuf.get());
             is >> protoBuf;
 
-            self->handleResult(self->result);
-            const bool isFile = protoBuf.GetIsFile();
-            if (isFile) {
-                File file(protoBuf.GetPath());
-                file.SetFileData(protoBuf.GetData());
-                const auto &index = protoBuf.GetIndex();
-                const auto &total = protoBuf.GetTotal();
-                if (index < total) {
-                    self->result += "get file: " + protoBuf.GetPath().string() +
-                                    " " + std::to_string(index) + "/" +
-                                    std::to_string(total);
-                } else if (index == total) {
-                    self->result += "get file: " + protoBuf.GetPath().string() +
-                                    " " + std::to_string(index) + "/" +
-                                    std::to_string(total) + " ok";
+            if (ProtoBuf::Method::Post == protoBuf.GetMethod()) {
+                if (protoBuf.GetIsFile()) {
+                    File file(protoBuf.GetPath());
+                    file.SetFileData(protoBuf.GetData());
+                    const auto &index = protoBuf.GetIndex();
+                    const auto &total = protoBuf.GetTotal();
+                    self->result.clear();
+                    if (index < total) {
+                        self->result +=
+                            "get file: " + protoBuf.GetPath().string() + " " +
+                            std::to_string(index) + "/" + std::to_string(total);
+                    } else if (index == total) {
+                        self->result +=
+                            "get file: " + protoBuf.GetPath().string() + " " +
+                            std::to_string(index) + "/" +
+                            std::to_string(total) + " ok";
+                    }
+                    self->handleOutPutTime(self->result);
+                } else {
+                    const auto &data = protoBuf.GetData();
+                    if (protoBuf.GetIsDir()) {
+                        self->dir.clear();
+                        self->dir += std::string(data.begin(), data.end());
+                    } else {
+                        self->result.clear();
+                        self->handleOutPutTime(self->result);
+                        self->result += std::string(data.begin(), data.end());
+                    }
                 }
             } else {
-                const auto &data = protoBuf.GetData();
-                self->result += std::string(data.begin(), data.end());
+                error("recv protobuf`s method is not post");
             }
         });
 }
@@ -178,9 +187,22 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     });
 }
 
+void app::TcpClient::registerQuery() {
+    if (connectFlag == false) return;
+    timer.async_wait([self = shared_from_this()](const asio::error_code &e) {
+        if (e) {
+            error("{}", e.message());
+            return;
+        }
+        self->handleWrite({ProtoBuf::Method::Query, self->selectPath,
+                           std::vector<char>{'n', 'u', 'l', 'l'}});
+        self->timer.expires_from_now(std::chrono::seconds(1));
+        self->registerQuery();
+    });
+}
+
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {
-    handleWrite(
-        {ProtoBuf::Method::Query, path, std::vector<char>{'n', 'u', 'l', 'l'}});
+    selectPath = path;
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
@@ -221,6 +243,7 @@ void app::TcpClient::connect() {
         connectFlag = true;
         info("connect {}:{} success ", ip, port);
         handleRead();
+        registerQuery();
     });
 }
 
@@ -237,6 +260,8 @@ void app::TcpClient::disconnect() {
 bool app::TcpClient::isConnected() { return connectFlag; }
 
 std::string app::TcpClient::getResult() { return result; }
+
+std::string app::TcpClient::getDir() { return dir; }
 
 void app::TcpClient::run() {
     std::thread([this]() {

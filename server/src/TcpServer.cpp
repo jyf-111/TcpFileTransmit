@@ -188,11 +188,11 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
 
             std::variant<std::string, std::vector<std::vector<char>>> result;
 
-            ProtoBuf protoBuf;
+            ProtoBuf recv;
             try {
                 std::istream is(streambuf.get());
-                is >> protoBuf;
-                result = self->handleFileAction(protoBuf);
+                is >> recv;
+                result = self->handleFileAction(recv);
             } catch (const std::exception& e) {
                 error(e.what());
                 result = "some error occured";
@@ -200,16 +200,19 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
             if (result.index() == 0) {
                 const auto& str = std::get<std::string>(result);
 
-                ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
-                             std::vector<char>(str.begin(), str.end())};
-                self->handleWrite(socket_ptr, ret);
+                ProtoBuf send{ProtoBuf::Method::Post, recv.GetPath(),
+                              std::vector<char>(str.begin(), str.end())};
+                if (recv.GetMethod() == ProtoBuf::Method::Query) {
+                    send.SetIsDir(true);
+                }
+                self->handleWrite(socket_ptr, send);
 
             } else {
                 const auto& vec =
                     std::get<std::vector<std::vector<char>>>(result);
                 const auto& len = vec.size();
                 for (std::size_t i = 0; i < len; ++i) {
-                    ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
+                    ProtoBuf ret{ProtoBuf::Method::Post, recv.GetPath(),
                                  vec.at(i)};
                     ret.SetIsFile(true);
                     ret.SetIndex(i);

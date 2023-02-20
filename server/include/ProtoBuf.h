@@ -67,8 +67,19 @@ class ProtoBuf {
     void SetHeadSize(const std::size_t &);
 
     /**
+     * @brief Method for get isDIr
+     * @return const bool&
+     */
+    [[nodiscard]] const bool &GetIsDir() const;
+
+    /**
+     * @brief Method for set isFile
+     */
+    void SetIsDir(const bool &);
+
+    /**
      * @brief Method for get isFile
-     * @return const bool
+     * @return const bool&
      */
     [[nodiscard]] const bool &GetIsFile() const;
 
@@ -148,6 +159,7 @@ class ProtoBuf {
    private:
     std::size_t size;
     std::size_t headsize;
+    bool isDir = false;
     bool isFile = false;
     std::size_t index = 0;
     std::size_t total = 0;
@@ -165,7 +177,7 @@ inline ProtoBuf::ProtoBuf(const Method &method,
 
     this->headsize = 4 * sizeof(std::size_t) +
                      ProtoBuf::MethodToString(method).size() +
-                     path.string().size() + 3;
+                     path.string().size() + 4;
     this->size = headsize + data.size();
 }
 
@@ -209,6 +221,10 @@ inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
     this->headsize = headsize;
 }
 
+inline const bool &ProtoBuf::GetIsDir() const { return this->isDir; }
+
+inline void ProtoBuf::SetIsDir(const bool &isDir) { this->isDir = isDir; }
+
 inline const bool &ProtoBuf::GetIsFile() const { return this->isFile; }
 
 inline void ProtoBuf::SetIsFile(const bool &isFile) { this->isFile = isFile; }
@@ -244,6 +260,8 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
              sizeof(std::size_t));
     os.write(reinterpret_cast<const char *>(&protoBuf.GetHeadSize()),
              sizeof(std::size_t));
+    os.write(reinterpret_cast<const char *>(&protoBuf.GetIsDir()),
+             sizeof(bool));
     os.write(reinterpret_cast<const char *>(&protoBuf.GetIsFile()),
              sizeof(bool));
     os.write(reinterpret_cast<const char *>(&protoBuf.GetIndex()),
@@ -263,12 +281,14 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     std::size_t size;
     std::size_t headsize;
     bool isFile;
+    bool isDir;
     std::size_t index;
     std::size_t total;
     std::string method;
     std::filesystem::path path;
     is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&headsize), sizeof(std::size_t));
+    is.read(reinterpret_cast<char *>(&isDir), sizeof(bool));
     is.read(reinterpret_cast<char *>(&isFile), sizeof(bool));
     is.read(reinterpret_cast<char *>(&index), sizeof(std::size_t));
     is.read(reinterpret_cast<char *>(&total), sizeof(std::size_t));
@@ -279,6 +299,7 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
 
     protoBuf.SetSize(size);
     protoBuf.SetHeadSize(headsize);
+    protoBuf.SetIsDir(isDir);
     protoBuf.SetIsFile(isFile);
     protoBuf.SetIndex(index);
     protoBuf.SetTotal(total);
@@ -291,7 +312,7 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
 
 inline const std::string ProtoBuf::toString() const {
     return "protobuf " + std::to_string(size) + " " + std::to_string(headsize) +
-           " " + std::to_string(isFile) + " " + std::to_string(index) + " " +
-           std::to_string(total) + " " + MethodToString(method) + " " +
-           path.string();
+           " " + std::to_string(isDir) + " " + std::to_string(isFile) + " " +
+           std::to_string(index) + " " + std::to_string(total) + " " +
+           MethodToString(method) + " " + path.string();
 }

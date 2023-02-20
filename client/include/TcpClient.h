@@ -16,11 +16,14 @@ namespace app {
  */
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
     asio::io_service io;
+    asio::steady_timer timer{io, std::chrono::seconds(3)};
     std::string domain;
     asio::ip::tcp::socket tcpSocket{io};
     asio::ip::tcp::resolver resolver{io};
     asio::io_context::strand writeStrand{io};
     std::string result;
+    std::string dir;
+    std::filesystem::path selectPath = ".";
     bool connectFlag = false;
 
     std::string ip = "127.0.0.1";
@@ -41,7 +44,11 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     /**
      * @brief add time to result
      */
-    void handleResult(std::string &);
+    void handleOutPutTime(std::string &);
+    /**
+     * register query
+     */
+    void registerQuery();
 
    public:
     [[nodiscard]] std::string getIp() const;
@@ -65,6 +72,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void disconnect();
     bool isConnected();
     std::string getResult();
+    std::string getDir();
 
     void run();
 };

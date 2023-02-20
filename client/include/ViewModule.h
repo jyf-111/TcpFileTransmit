@@ -14,7 +14,7 @@ namespace app {
  */
 class ViewModule {
     char getPath[BUF_SIZE];
-    char queryPath[BUF_SIZE];
+    char queryPath[BUF_SIZE] = {'.'};
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];
     char deletePath[BUF_SIZE];

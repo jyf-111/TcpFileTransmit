@@ -40,18 +40,20 @@ void app::ViewModule::render_resultUI(bool &show_window) {
 }
 
 void app::ViewModule::render_query_window(bool &show_window) {
-    ImGui::Begin("Tcp File query", &show_window, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Tcp File query", &show_window);
 
     ImGui::Text("query file");
-    ImGui::BulletText("Enter the file path to query:");
-
+    ImGui::BulletText("path:");
+    ImGui::SameLine();
     ImGui::InputTextWithHint("", "file path", queryPath,
                              IM_ARRAYSIZE(queryPath));
-    ImGui::SameLine();
-    if (ImGui::Button("query")) {
-        info("query file: {}", queryPath);
-        client->handleQuery(queryPath);
-    }
+    client->handleQuery(queryPath);
+
+    std::string res = client->getDir();
+    char *s = const_cast<char *>(res.c_str());
+    ImGui::InputTextMultiline("##result", s, res.size(),
+                              ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 50),
+                              ImGuiInputTextFlags_ReadOnly);
     ImGui::End();
 }
 
