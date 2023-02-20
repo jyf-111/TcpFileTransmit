@@ -9,7 +9,6 @@ class Controller {
    public:
     Controller(std::unique_ptr<app::view> view) : view(std::move(view)) {}
 
-    void connect() { view->GetViewModule()->connect(); }
     void readProperties() {
         try {
             Properties properties;
@@ -27,7 +26,8 @@ class Controller {
     }
     void run() {
         view->init();
-        view->GetViewModule()->connect();
+        view->GetViewModule()->getClient()->run();
+        view->GetViewModule()->getClient()->connect();
         view->loop();
     }
 };

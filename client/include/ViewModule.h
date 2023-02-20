@@ -32,11 +32,10 @@ class ViewModule {
     ViewModule(ViewModule &&) = delete;
     ViewModule &operator=(const ViewModule &) = delete;
 
-    /*
-     * connect client
+    /**
+     * get client
      */
-    void connect();
-
+    [[nodiscard]] std::shared_ptr<TcpClient> getClient() const;
     /**
      * @brief render result window function
      */

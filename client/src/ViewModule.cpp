@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
+#include <winsock2.h>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
@@ -23,9 +24,8 @@ static void HelpMarker(const char *desc) {
     }
 }
 
-void app::ViewModule::connect() {
-    client->run();
-    client->connect();
+std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {
+    return client;
 }
 
 void app::ViewModule::render_resultUI(bool &show_window) {

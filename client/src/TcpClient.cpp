@@ -211,7 +211,7 @@ void app::TcpClient::connect() {
     ;
     tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
         if (e.code()) {
-            warn("connect failed");
+            warn("connect {}:{} failed: {}", ip, port, e.what());
             // NOTE:
             // windows 20s
             // linux 127s
@@ -220,7 +220,6 @@ void app::TcpClient::connect() {
         }
         connectFlag = true;
         info("connect {}:{} success ", ip, port);
-
         handleRead();
     });
 }
