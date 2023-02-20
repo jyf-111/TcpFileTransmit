@@ -80,7 +80,7 @@ void app::TcpClient::handleOutPutTime(std::string &result) {
     tmp += std::to_string(now->tm_min);
     tmp += ":";
     tmp += std::to_string(now->tm_sec);
-    tmp += "]";
+    tmp += "]\n";
     tmp.append(result);
     tmp.append("\n");
     result = tmp;
@@ -129,7 +129,8 @@ void app::TcpClient::handleRead() {
 
             if (ProtoBuf::Method::Post == protoBuf.GetMethod()) {
                 if (protoBuf.GetIsFile()) {
-                    File file(protoBuf.GetPath());
+                    File file(self->savePath + "/" +
+                              protoBuf.GetPath().filename().string());
                     file.SetFileData(protoBuf.GetData());
                     const auto &index = protoBuf.GetIndex();
                     const auto &total = protoBuf.GetTotal();
@@ -199,6 +200,10 @@ void app::TcpClient::registerQuery() {
         self->timer.expires_from_now(std::chrono::seconds(1));
         self->registerQuery();
     });
+}
+
+void app::TcpClient::setSavePath(const std::string &savePath) {
+    this->savePath = savePath;
 }
 
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {

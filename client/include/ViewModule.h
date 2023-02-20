@@ -7,13 +7,14 @@
 /** @brief Application class */
 namespace app {
 
-#define BUF_SIZE 65536
+#define BUF_SIZE 1024
 
 /**
  * @brief ClientModule
  */
 class ViewModule {
     char getPath[BUF_SIZE];
+    char savePath[BUF_SIZE] = {'.'};
     char queryPath[BUF_SIZE] = {'.'};
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];

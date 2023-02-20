@@ -24,6 +24,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string result;
     std::string dir;
     std::filesystem::path selectPath = ".";
+    std::string savePath = ".";
     bool connectFlag = false;
 
     std::string ip = "127.0.0.1";
@@ -73,6 +74,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     bool isConnected();
     std::string getResult();
     std::string getDir();
+    void setSavePath(const std::string& savePath);
 
     void run();
 };

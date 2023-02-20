@@ -61,9 +61,34 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::Begin("Tcp File get", &show_window, ImGuiWindowFlags_MenuBar);
 
     ImGui::Text("get file");
-    ImGui::BulletText("Enter the file path to get:");
 
-    ImGui::InputTextWithHint("", "file path", getPath, IM_ARRAYSIZE(getPath));
+    ImGui::BulletText("Enter the place to save file:");
+    ImGui::InputText("save path", savePath, IM_ARRAYSIZE(savePath));
+    ImGui::SameLine();
+    if (ImGui::Button("open explorer")) {
+        ImGuiFileDialog::Instance()->OpenDialog(
+            "ChooseDirDlgKey", "Choose File", nullptr, ".", 1, nullptr,
+            ImGuiFileDialogFlags_Modal);
+    }
+    if (ImGuiFileDialog::Instance()->Display("ChooseDirDlgKey")) {
+        // action if OK
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            std::string filePathName =
+                ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath =
+                ImGuiFileDialog::Instance()->GetCurrentPath();
+            // action
+            std::copy(filePath.begin(), filePath.end(), savePath);
+            client->setSavePath(savePath);
+            debug("select dir: {}", filePathName);
+        }
+        // close
+        ImGuiFileDialog::Instance()->Close();
+    }
+
+    ImGui::BulletText("Enter the file path to get on server:");
+    ImGui::InputTextWithHint("get  file", "file path", getPath,
+                             IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
         info("get file: {}", getPath);
@@ -95,7 +120,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
             std::string filePath =
                 ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
-            info("add file: {}", filePathName);
+            debug("add file: {}", filePathName);
             std::copy(filePathName.begin(), filePathName.end(), selectPath);
             // get file name
             std::filesystem::path path(selectPath);
