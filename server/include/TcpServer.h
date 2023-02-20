@@ -19,7 +19,7 @@ class TcpServer {
     std::size_t port = 8000;
     std::string level = "info";
     std::size_t filesplit = 65536 * 4;
-
+    std::size_t threads ;
     /**
      * handle close socket
      */
@@ -58,6 +58,8 @@ class TcpServer {
     void setLevel(const std::string &);
     [[nodiscard]] std::size_t getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
+    [[nodiscard]] std::size_t getThreads() const;
+    void setThreads(const std::size_t &);
 
     /**
      * handle signal

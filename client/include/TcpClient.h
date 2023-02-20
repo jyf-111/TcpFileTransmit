@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "ProtoBuf.h"
-#include "asio/io_context.hpp"
 
 using namespace spdlog;
 

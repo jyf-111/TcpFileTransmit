@@ -4,9 +4,7 @@
 
 #include <array>
 #include <filesystem>
-#include <memory>
 #include <string>
-#include <thread>
 #include <variant>
 #include <vector>
 
@@ -50,6 +48,16 @@ void TcpServer::setFilesplit(const std::size_t& size) {
     return filesplit;
 }
 
+[[nodiscard]] std::size_t TcpServer::getThreads() const { return threads; }
+
+void TcpServer::setThreads(const std::size_t& threads) {
+    if (threads > 0) {
+        this->threads = threads;
+    } else {
+        this->threads = std::thread::hardware_concurrency();
+    }
+}
+
 void TcpServer::handleCloseSocket(
     std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
     socket_ptr->close();
@@ -57,20 +65,11 @@ void TcpServer::handleCloseSocket(
 }
 
 void TcpServer::run() {
-    auto run = ([this]() {
-        try {
-            io.run();
-        } catch (asio::system_error& e) {
-            error("Run Error: {}", e.what());
-        }
-    });
-    std::vector<std::thread> threads;
-    for (int i = 0; i < 5; i++) {
-        threads.emplace_back(run);
+    asio::thread_pool threadPool(threads);
+    for (std::size_t i = 0; i < threads; ++i) {
+        asio::post(threadPool, [this] { io.run(); });
     }
-    for (auto& thread : threads) {
-        thread.join();
-    }
+    threadPool.join();
 }
 
 void TcpServer::handleSignal() {
@@ -208,7 +207,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 const auto& vec =
                     std::get<std::vector<std::vector<char>>>(result);
                 const auto& len = vec.size();
-                for (std::size_t i = 0; i < len; i++) {
+                for (std::size_t i = 0; i < len; ++i) {
                     ProtoBuf ret{ProtoBuf::Method::Post, protoBuf.GetPath(),
                                  vec.at(i)};
                     ret.SetIsFile(true);

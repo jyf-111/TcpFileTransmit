@@ -4,7 +4,6 @@
 
 #include <filesystem>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "File.h"
@@ -21,16 +20,18 @@ std::string app::TcpClient::getDomain() const { return this->domain; }
 
 void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
-
-    resolver.async_resolve(domain, std::to_string(port),
-                           [this](const asio::error_code &e,
-                                  asio::ip::tcp::resolver::iterator iter) {
-                               if (e) {
-                                   error("query Error: {}", e.message());
-                                   return;
-                               }
-                               setIp(iter->endpoint().address().to_string());
-                           });
+    if (domain.size() != 0) {
+        resolver.async_resolve(
+            domain, std::to_string(port),
+            [this](const asio::error_code &e,
+                   asio::ip::tcp::resolver::iterator iter) {
+                if (e) {
+                    error("query Error: {}", e.message());
+                    return;
+                }
+                setIp(iter->endpoint().address().to_string());
+            });
+    }
 }
 
 [[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
@@ -185,7 +186,7 @@ void app::TcpClient::handleGet(const std::filesystem::path &path) {
 void app::TcpClient::handlePost(const std::filesystem::path &path,
                                 const std::vector<std::vector<char>> &data) {
     const auto lenth = data.size();
-    for (int i = 0; i < lenth; i++) {
+    for (int i = 0; i < lenth; ++i) {
         ProtoBuf protobuf{ProtoBuf::Method::Post, path, data.at(i)};
         protobuf.SetIndex(i);
         protobuf.SetTotal(lenth - 1);

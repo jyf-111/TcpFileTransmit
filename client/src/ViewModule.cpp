@@ -6,7 +6,6 @@
 #include "File.h"
 #include "ImGuiFileDialog.h"
 #include "TcpClient.h"
-#include "spdlog/common.h"
 
 using namespace spdlog;
 

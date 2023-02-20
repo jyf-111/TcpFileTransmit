@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <asio.hpp>
-#include <memory>
 
 #include "Properties.h"
 #include "TcpServer.h"
@@ -21,7 +20,11 @@ class Controller {
             server->setIp(value["ip"].asString());
             server->setPort(value["port"].asUInt());
             server->setLevel(value["log"].asString());
-            server->setFilesplit(value["splitsize"].asUInt());
+            server->setFilesplit(value["splitsize"].asUInt64());
+            server->setThreads(value["threads"].asUInt());
+            info("ip:{} port:{} levvel:{} filesplit:{} threads:{}",
+                 server->getIp(), server->getPort(), server->getLevel(),
+                 server->getFilesplitsize(), server->getThreads());
         } catch (std::exception& e) {
             warn("{}", e.what());
         }

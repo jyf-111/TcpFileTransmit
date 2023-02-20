@@ -1,7 +1,6 @@
 #include <memory>
 
 #include "Properties.h"
-#include "json/value.h"
 #include "view.h"
 
 class Controller {
