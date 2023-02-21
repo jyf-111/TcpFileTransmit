@@ -56,6 +56,7 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(
             file_data.push_back(data);
         }
     }
+    ifs.close();
     return file_data;
 }
 

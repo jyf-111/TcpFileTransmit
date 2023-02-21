@@ -67,9 +67,20 @@ void TcpServer::handleCloseSocket(
 void TcpServer::run() {
     asio::thread_pool threadPool(threads);
     for (std::size_t i = 0; i < threads; ++i) {
-        asio::post(threadPool, [self = shared_from_this()] { self->io.run(); });
+        asio::post(threadPool, [self = shared_from_this()] {
+            try {
+                self->io.run();
+            } catch (asio::system_error& e) {
+                error(e.what());
+            }
+        });
     }
-    threadPool.join();
+    threadPool.attach();
+    try {
+        io.run();
+    } catch (asio::system_error& e) {
+        error(e.what());
+    }
 }
 
 void TcpServer::handleSignal() {
@@ -123,7 +134,7 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
         }
         case ProtoBuf::Method::Delete:
             file.DeleteActualFile();
-            return "delete_file_OK";
+            return "delete file OK";
         default:
             throw std::runtime_error("unknown method");
     }
