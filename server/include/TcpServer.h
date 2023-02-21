@@ -12,7 +12,6 @@
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     asio::io_context io;
     asio::ip::tcp::acceptor acceptor{io};
-    asio::io_context::strand writeStrand{io};
     asio::signal_set sig{io, SIGINT, SIGTERM};
 
     std::string ip = "127.0.0.1";

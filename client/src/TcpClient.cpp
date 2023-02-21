@@ -175,17 +175,8 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     auto os = std::make_shared<std::ostream>(buf.get());
     *os << protobuf;
 
-    // NOTE: async_write
-    writeStrand.post([self = shared_from_this(), buf]() {
-        asio::async_write(self->tcpSocket, *buf.get(),
-                          [](const asio::error_code &e, std::size_t size) {
-                              if (e) {
-                                  error("{}", e.message());
-                                  return;
-                              }
-                              debug("write complete");
-                          });
-    });
+    // NOTE: write
+    asio::write(tcpSocket, *buf.get());
 }
 
 void app::TcpClient::registerQuery() {

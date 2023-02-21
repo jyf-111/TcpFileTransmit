@@ -76,11 +76,6 @@ void TcpServer::run() {
         });
     }
     threadPool.attach();
-    try {
-        io.run();
-    } catch (asio::system_error& e) {
-        error(e.what());
-    }
 }
 
 void TcpServer::handleSignal() {
@@ -114,7 +109,6 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
             return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
-            debug("Get {}", path.string());
             return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
@@ -204,6 +198,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 std::istream is(streambuf.get());
                 is >> recv;
                 result = self->handleFileAction(recv);
+                info("get result ok");
             } catch (const std::exception& e) {
                 error(e.what());
                 result = "some error occured";
@@ -239,17 +234,5 @@ void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os(buf.get());
     os << protobuf;
-
-    writeStrand.post([self = shared_from_this(), socket_ptr, buf]() {
-        asio::async_write(
-            *socket_ptr, *buf,
-            [self, socket_ptr](const asio::error_code& e, std::size_t size) {
-                if (e) {
-                    self->handleCloseSocket(socket_ptr);
-                    error("async_write: {}", e.message());
-                    return;
-                }
-                debug("send result to client success");
-            });
-    });
+    asio::write(*socket_ptr, *buf);
 }
