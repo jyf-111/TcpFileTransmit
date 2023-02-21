@@ -58,7 +58,6 @@ void TcpServer::setThreads(const std::size_t& threads) {
     } else {
         this->threads = std::thread::hardware_concurrency();
     }
-    this->threads = this->threads > 1 ? this->threads : 2;
 }
 
 void TcpServer::handleCloseSocket(
@@ -78,7 +77,7 @@ void TcpServer::run() {
             }
         });
     }
-    threadPool.attach();
+    threadPool.join();
 }
 
 void TcpServer::handleSignal() {
@@ -236,5 +235,5 @@ void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os(buf.get());
     os << protobuf;
-    asio::post([socket_ptr, buf]() { asio::write(*socket_ptr, *buf); });
+    asio::write(*socket_ptr, *buf);
 }

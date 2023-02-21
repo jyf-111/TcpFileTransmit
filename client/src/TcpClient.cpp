@@ -177,7 +177,7 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     *os << protobuf;
 
     // NOTE: write
-    asio::post([this, buf]() { asio::write(tcpSocket, *buf.get()); });
+    asio::write(tcpSocket, *buf.get());
 }
 
 void app::TcpClient::registerQuery() {
