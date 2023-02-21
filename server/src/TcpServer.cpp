@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <string>
@@ -10,6 +11,7 @@
 
 #include "File.h"
 #include "ProtoBuf.h"
+#include "asio/post.hpp"
 
 using namespace spdlog;
 
@@ -56,6 +58,7 @@ void TcpServer::setThreads(const std::size_t& threads) {
     } else {
         this->threads = std::thread::hardware_concurrency();
     }
+    this->threads = this->threads > 1 ? this->threads : 2;
 }
 
 void TcpServer::handleCloseSocket(
@@ -198,7 +201,6 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 std::istream is(streambuf.get());
                 is >> recv;
                 result = self->handleFileAction(recv);
-                info("get result ok");
             } catch (const std::exception& e) {
                 error(e.what());
                 result = "some error occured";
@@ -234,5 +236,5 @@ void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os(buf.get());
     os << protobuf;
-    asio::write(*socket_ptr, *buf);
+    asio::post([socket_ptr, buf]() { asio::write(*socket_ptr, *buf); });
 }

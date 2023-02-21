@@ -10,6 +10,7 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "asio/post.hpp"
 
 using namespace spdlog;
 
@@ -176,7 +177,7 @@ void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
     *os << protobuf;
 
     // NOTE: write
-    asio::write(tcpSocket, *buf.get());
+    asio::post([this, buf]() { asio::write(tcpSocket, *buf.get()); });
 }
 
 void app::TcpClient::registerQuery() {
