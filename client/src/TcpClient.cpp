@@ -23,17 +23,8 @@ void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
 
     if (domain.size() != 0) {
-        resolver.async_resolve(
-            domain, std::to_string(port),
-            [self = shared_from_this()](
-                const asio::error_code &e,
-                asio::ip::tcp::resolver::iterator iter) {
-                if (e) {
-                    error("query Error: {}", e.message());
-                    return;
-                }
-                self->setIp(iter->endpoint().address().to_string());
-            });
+        auto iter = resolver.resolve(domain, std::to_string(port));
+        setIp(iter->endpoint().address().to_string());
     }
 }
 
@@ -171,7 +162,7 @@ void app::TcpClient::registerQuery() {
             return;
         }
         self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
-                           std::vector<char>{'n', 'u', 'l', 'l'}});
+                                std::vector<char>{'n', 'u', 'l', 'l'}});
         self->session->doWrite();
         self->timer.expires_from_now(std::chrono::seconds(1));
         self->registerQuery();
