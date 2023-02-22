@@ -28,19 +28,35 @@ void app::TcpClient::setDomain(const std::string &domain) {
     }
 }
 
-[[nodiscard]] std::size_t app::TcpClient::getPort() const { return port; }
+std::size_t app::TcpClient::getPort() const { return port; }
 
 void app::TcpClient::setPort(const std::size_t &port) { this->port = port; }
 
-[[nodiscard]] std::string app::TcpClient::getLevel() const { return level; }
+std::string app::TcpClient::getLevel() const { return level; }
 
 void app::TcpClient::setFilesplit(const std::size_t &size) {
     this->filesplit = size;
 }
 
-[[nodiscard]] std::size_t app::TcpClient::getFilesplitsize() const {
+std::size_t app::TcpClient::getFilesplitsize() const {
     return filesplit;
 }
+
+void app::TcpClient::setResult(const std::string &result) {
+    this->result = result;
+}
+
+std::string app::TcpClient::getResult() { return result; }
+
+void app::TcpClient::setDir(const std::string &dir) { this->dir = dir; }
+
+std::string app::TcpClient::getDir() { return dir; }
+
+void app::TcpClient::setSavePath(const std::string &savePath) {
+    this->savePath = savePath;
+}
+
+const std::string app::TcpClient::getSavePath() { return savePath; }
 
 void app::TcpClient::setLevel(const std::string &level) {
     if (level == "debug") {
@@ -169,10 +185,6 @@ void app::TcpClient::registerQuery() {
     });
 }
 
-void app::TcpClient::setSavePath(const std::string &savePath) {
-    this->savePath = savePath;
-}
-
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {
     selectPath = path;
 }
@@ -233,10 +245,6 @@ void app::TcpClient::disconnect() {
 }
 
 bool app::TcpClient::isConnected() { return connectFlag; }
-
-std::string app::TcpClient::getResult() { return result; }
-
-std::string app::TcpClient::getDir() { return dir; }
 
 void app::TcpClient::run() {
     std::thread([this]() {

@@ -11,31 +11,27 @@
 class WriteSession : public std::enable_shared_from_this<WriteSession> {
     std::shared_ptr<asio::ip::tcp::socket> socketPtr;
     std::queue<ProtoBuf> writeQueue;
-    asio::streambuf buf;
-    std::ostream os{&buf};
-    std::mutex PushMtx;
-    std::mutex PopMtx;
+    std::mutex mtx;
 
    public:
     WriteSession(std::shared_ptr<asio::ip::tcp::socket> socketPtr)
         : socketPtr(std::move(socketPtr)) {}
 
     void enqueue(const ProtoBuf& buf) {
-        std::lock_guard<std::mutex> lock(PushMtx);
+        std::lock_guard<std::mutex> lock(mtx);
         writeQueue.push(buf);
     }
 
-    const ProtoBuf dequeue() {
-        std::lock_guard<std::mutex> lock(PopMtx);
-        ProtoBuf tmp = writeQueue.front();
-        writeQueue.pop();
-        return tmp;
-    }
-
     void doWrite() {
+        std::lock_guard<std::mutex> lock(mtx);
         if (writeQueue.empty()) return;
-        os << dequeue();
-        asio::async_write(*socketPtr, buf,
+
+        // NOTE: buf in doWrite to makesure thread safe
+        auto buf = std::make_shared<asio::streambuf>();
+        std::ostream os{buf.get()};
+        os << writeQueue.front();
+        writeQueue.pop();
+        asio::async_write(*socketPtr, *buf,
                           [self = shared_from_this()](const asio::error_code& e,
                                                       std::size_t size) {
                               if (e) error("async_write: {}", e.message());

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ProtoBuf.h"
+#include "WriteSession.h"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     asio::io_context io;
@@ -22,25 +23,18 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     /**
      * handle close socket
      */
-    void handleCloseSocket(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
+    void handleCloseSocket(std::shared_ptr<asio::ip::tcp::socket>);
 
     /**
      * handle File Action
      */
-    auto handleFileAction(ProtoBuf &protoBuf)
+    auto handleFileAction(ProtoBuf &)
         -> std::variant<std::string, std::vector<std::vector<char>>>;
 
     /**
      * handle read
      */
-    void handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr);
-
-    /**
-     * handle write
-     */
-
-    void handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                     const ProtoBuf &);
+    void handleRead(std::shared_ptr<asio::ip::tcp::socket>,std::shared_ptr<WriteSession>);
 
    public:
     TcpServer() = default;

@@ -20,7 +20,7 @@ class ProtoBuf {
     /**
      * @brief Method enum
      */
-    enum class Method {
+    enum class [[nodiscard]] Method {
         Query,
         Get,
         Post,

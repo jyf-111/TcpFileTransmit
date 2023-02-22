@@ -19,7 +19,6 @@ class ViewModule {
     char selectPath[BUF_SIZE];
     char sendToPath[BUF_SIZE];
     char deletePath[BUF_SIZE];
-    char result[BUF_SIZE];
 
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 

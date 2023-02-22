@@ -18,7 +18,6 @@ namespace app {
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
     asio::io_service io;
     asio::steady_timer timer{io, std::chrono::seconds(3)};
-    std::string domain;
     std::shared_ptr<asio::ip::tcp::socket> socketPtr =
         std::make_shared<asio::ip::tcp::socket>(io);
     std::shared_ptr<WriteSession> session =
@@ -31,6 +30,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string savePath = ".";
     bool connectFlag = false;
 
+    std::string domain;
     std::string ip = "127.0.0.1";
     std::size_t port = 8000;
     std::string level = "info";
@@ -61,6 +61,12 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setLevel(const std::string &);
     [[nodiscard]] std::size_t getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
+    void setResult(const std::string &);
+    std::string getResult();
+    void setDir(const std::string &dir);
+    std::string getDir();
+    void setSavePath(const std::string &savePath);
+    const std::string getSavePath();
 
     void handleQuery(const std::filesystem::path &);
     void handleGet(const std::filesystem::path &);
@@ -71,10 +77,6 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void connect();
     void disconnect();
     bool isConnected();
-    std::string getResult();
-    std::string getDir();
-    void setSavePath(const std::string &savePath);
-
     void run();
 };
 

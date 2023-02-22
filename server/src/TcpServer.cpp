@@ -5,12 +5,14 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
 
 #include "File.h"
 #include "ProtoBuf.h"
+#include "WriteSession.h"
 #include "asio/post.hpp"
 
 using namespace spdlog;
@@ -138,34 +140,40 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
 }
 
 void TcpServer::handleAccept() {
-    std::shared_ptr<asio::ip::tcp::socket> socket_ptr =
+    std::shared_ptr<asio::ip::tcp::socket> socketPtr =
         std::make_shared<asio::ip::tcp::socket>(io);
+
+    std::shared_ptr<WriteSession> writeSession =
+        std::make_shared<WriteSession>(socketPtr);
 
     auto ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
     acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
 
     debug("waiting connection");
-    acceptor.async_accept(*socket_ptr, [self = shared_from_this(),
-                                        socket_ptr](const asio::error_code& e) {
-        if (e) {
-            error("async_accept: " + e.message());
-        } else {
-            self->handleRead(socket_ptr);
-            info("connection accepted");
-        }
-        self->handleAccept();
-    });
+    acceptor.async_accept(*socketPtr,
+                          [self = shared_from_this(), socketPtr,
+                           writeSession](const asio::error_code& e) {
+                              if (e) {
+                                  error("async_accept: " + e.message());
+                              } else {
+                                  self->handleRead(socketPtr, writeSession);
+                                  info("connection accepted");
+                              }
+                              self->handleAccept();
+                          });
 }
 
-void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
+void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socketPtr,
+                           std::shared_ptr<WriteSession> writeSession) {
     debug("new read");
     auto streambuf = std::make_shared<asio::streambuf>();
 
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
+
     asio::async_read(
-        *socket_ptr, *streambuf,
-        [peek, streambuf, socket_ptr](const asio::system_error& e,
-                                      std::size_t size) -> std::size_t {
+        *socketPtr, *streambuf,
+        [peek, streambuf, socketPtr](const asio::system_error& e,
+                                     std::size_t size) -> std::size_t {
             if (e.code()) {
                 error("async_reading: {}", e.what());
                 return 0;
@@ -181,17 +189,16 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 return 1;
             }
         },
-        [streambuf, socket_ptr, self = shared_from_this()](
+        [streambuf, socketPtr, writeSession, self = shared_from_this()](
             const asio::error_code& e, std::size_t size) {
             if (e) {
-                self->handleCloseSocket(socket_ptr);
+                self->handleCloseSocket(socketPtr);
                 error("async_read: {}", e.message());
                 return;
             }
 
             debug("read complete");
-
-            self->handleRead(socket_ptr);
+            self->handleRead(socketPtr, writeSession);
 
             std::variant<std::string, std::vector<std::vector<char>>> result;
 
@@ -212,8 +219,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                 if (recv.GetMethod() == ProtoBuf::Method::Query) {
                     send.SetIsDir(true);
                 }
-                self->handleWrite(socket_ptr, send);
-
+                writeSession->enqueue(send);
             } else {
                 const auto& vec =
                     std::get<std::vector<std::vector<char>>>(result);
@@ -224,16 +230,9 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
                     ret.SetIsFile(true);
                     ret.SetIndex(i);
                     ret.SetTotal(len - 1);
-                    self->handleWrite(socket_ptr, ret);
+                    writeSession->enqueue(ret);
                 }
             }
+            writeSession->doWrite();
         });
-}
-void TcpServer::handleWrite(std::shared_ptr<asio::ip::tcp::socket> socket_ptr,
-                            const ProtoBuf& protobuf) {
-    debug("new write");
-    auto buf = std::make_shared<asio::streambuf>();
-    std::ostream os(buf.get());
-    os << protobuf;
-    asio::write(*socket_ptr, *buf);
 }
