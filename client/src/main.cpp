@@ -13,13 +13,15 @@ class Controller {
         try {
             Properties properties;
             auto value = properties.readProperties();
-            view->GetViewModule()->client->setIp(value["ip"].asString());
-            view->GetViewModule()->client->setPort(value["port"].asUInt());
-            view->GetViewModule()->client->setDomain(
-                value["domain"].asString());
-            view->GetViewModule()->client->setLevel(value["log"].asString());
-            view->GetViewModule()->client->setFilesplit(
-                value["splitsize"].asUInt());
+            auto client = view->GetViewModule()->getClient();
+            client->setIp(value["ip"].asString());
+            client->setPort(value["port"].asUInt());
+            client->setDomain(value["domain"].asString());
+            client->setLevel(value["log"].asString());
+            client->setFilesplit(value["splitsize"].asUInt());
+            info("ip: {} port: {} level: {} filesplit: {}", client->getIp(),
+                 client->getPort(), client->getLevel(),
+                 client->getFilesplitsize());
         } catch (std::exception& e) {
             warn("{}", e.what());
         }
@@ -33,7 +35,6 @@ class Controller {
 };
 
 int main(int, char**) {
-
 #ifdef _WIN32
     HWND hwnd = GetForegroundWindow();
     if (hwnd) {

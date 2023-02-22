@@ -4,9 +4,10 @@
 
 #include <asio.hpp>
 #include <filesystem>
+#include <memory>
 #include <vector>
 
-#include "ProtoBuf.h"
+#include "WriteSession.h"
 
 using namespace spdlog;
 
@@ -18,9 +19,12 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     asio::io_service io;
     asio::steady_timer timer{io, std::chrono::seconds(3)};
     std::string domain;
-    asio::ip::tcp::socket tcpSocket{io};
+    std::shared_ptr<asio::ip::tcp::socket> socketPtr =
+        std::make_shared<asio::ip::tcp::socket>(io);
+    std::shared_ptr<WriteSession> session =
+        std::make_shared<WriteSession>(socketPtr);
+
     asio::ip::tcp::resolver resolver{io};
-    asio::io_context::strand writeStrand{io};
     std::string result;
     std::string dir;
     std::filesystem::path selectPath = ".";
@@ -36,11 +40,6 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
      * handle read
      */
     void handleRead();
-
-    /**
-     * main Process for recv and send
-     */
-    void handleWrite(const ProtoBuf &protobuf);
 
     /**
      * @brief add time to result
@@ -74,7 +73,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     bool isConnected();
     std::string getResult();
     std::string getDir();
-    void setSavePath(const std::string& savePath);
+    void setSavePath(const std::string &savePath);
 
     void run();
 };

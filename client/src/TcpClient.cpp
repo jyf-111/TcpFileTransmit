@@ -10,7 +10,6 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/post.hpp"
 
 using namespace spdlog;
 
@@ -94,7 +93,7 @@ void app::TcpClient::handleRead() {
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
     asio::async_read(
-        tcpSocket, *streambuf,
+        *socketPtr, *streambuf,
         [peek, streambuf](const asio::system_error &e,
                           std::size_t size) -> std::size_t {
             if (e.code()) {
@@ -164,22 +163,6 @@ void app::TcpClient::handleRead() {
         });
 }
 
-void app::TcpClient::handleWrite(const ProtoBuf &protobuf) {
-    if (!connectFlag) {
-        result = "not connected";
-        error("{}", result);
-        return;
-    }
-
-    debug("new write");
-    auto buf = std::make_shared<asio::streambuf>();
-    auto os = std::make_shared<std::ostream>(buf.get());
-    *os << protobuf;
-
-    // NOTE: write
-    asio::write(tcpSocket, *buf.get());
-}
-
 void app::TcpClient::registerQuery() {
     if (connectFlag == false) return;
     timer.async_wait([self = shared_from_this()](const asio::error_code &e) {
@@ -187,8 +170,9 @@ void app::TcpClient::registerQuery() {
             error("{}", e.message());
             return;
         }
-        self->handleWrite({ProtoBuf::Method::Query, self->selectPath,
+        self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
                            std::vector<char>{'n', 'u', 'l', 'l'}});
+        self->session->doWrite();
         self->timer.expires_from_now(std::chrono::seconds(1));
         self->registerQuery();
     });
@@ -203,8 +187,9 @@ void app::TcpClient::handleQuery(const std::filesystem::path &path) {
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
-    handleWrite(
+    session->enqueue(
         {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
+    session->doWrite();
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
@@ -214,13 +199,15 @@ void app::TcpClient::handlePost(const std::filesystem::path &path,
         ProtoBuf protobuf{ProtoBuf::Method::Post, path, data.at(i)};
         protobuf.SetIndex(i);
         protobuf.SetTotal(lenth - 1);
-        handleWrite(protobuf);
+        session->enqueue(protobuf);
     }
+    session->doWrite();
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
-    handleWrite({ProtoBuf::Method::Delete, path,
-                 std::vector<char>{'n', 'u', 'l', 'l'}});
+    session->enqueue({ProtoBuf::Method::Delete, path,
+                      std::vector<char>{'n', 'u', 'l', 'l'}});
+    session->doWrite();
 };
 
 void app::TcpClient::connect() {
@@ -228,7 +215,7 @@ void app::TcpClient::connect() {
     static asio::ip::tcp::endpoint ep =
         asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
     ;
-    tcpSocket.async_connect(ep, [this](const asio::system_error &e) {
+    socketPtr->async_connect(ep, [this](const asio::system_error &e) {
         if (e.code()) {
             warn("connect {}:{} failed: {}", ip, port, e.what());
             // NOTE:
@@ -247,7 +234,7 @@ void app::TcpClient::connect() {
 void app::TcpClient::disconnect() {
     if (connectFlag) {
         connectFlag = false;
-        tcpSocket.close();
+        socketPtr->close();
         info("disconnect success");
     } else {
         info("client is disconnect");
