@@ -38,9 +38,7 @@ void app::TcpClient::setFilesplit(const std::size_t &size) {
     this->filesplit = size;
 }
 
-std::size_t app::TcpClient::getFilesplitsize() const {
-    return filesplit;
-}
+std::size_t app::TcpClient::getFilesplitsize() const { return filesplit; }
 
 void app::TcpClient::setResult(const std::string &result) {
     this->result = result;
@@ -137,7 +135,7 @@ void app::TcpClient::handleRead() {
             if (ProtoBuf::Method::Post == protoBuf.GetMethod()) {
                 if (protoBuf.GetIsFile()) {
                     File file(self->savePath + "/" +
-                              protoBuf.GetPath().filename().string());
+                              protoBuf.GetPath().filename().string() + ".sw");
                     file.SetFileData(protoBuf.GetData());
                     const auto &index = protoBuf.GetIndex();
                     const auto &total = protoBuf.GetTotal();
@@ -147,6 +145,8 @@ void app::TcpClient::handleRead() {
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" + std::to_string(total);
                     } else if (index == total) {
+                        file.ReNameFile(self->savePath + "/" +
+                                        protoBuf.GetPath().filename().string());
                         self->result +=
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" +

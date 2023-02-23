@@ -22,7 +22,10 @@ class File {
      */
     void PathIsValid() const;
 
-
+    /**
+     * @brief rename file
+     */
+    void ReNameFile(const std::filesystem::path &);
     /**
      * @brief get file size
      * @return file size

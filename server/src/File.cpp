@@ -19,6 +19,11 @@ const std::size_t File::GetFileSize() const {
     return std::filesystem::file_size(path);
 }
 
+void File::ReNameFile(const std::filesystem::path &path) {
+    std::filesystem::rename(this->path, path);
+    this->path = path;
+}
+
 std::string File::QueryDirectory() const {
     if (path.empty() || !std::filesystem::exists(path) ||
         !std::filesystem::is_directory(path)) {

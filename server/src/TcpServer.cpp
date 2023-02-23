@@ -106,16 +106,17 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
     auto path = protoBuf.GetPath();
     auto data = protoBuf.GetData();
 
-    File file(path);
-
     switch (method) {
         case ProtoBuf::Method::Query: {
+            File file{path.string()};
             return file.QueryDirectory();
         }
         case ProtoBuf::Method::Get: {
+            File file{path.string()};
             return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
+            File file{path.string() + ".sw"};
             file.SetFileData(data);
             auto index = protoBuf.GetIndex();
             auto total = protoBuf.GetTotal();
@@ -123,6 +124,7 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total);
             } else if (index == total) {
+                file.ReNameFile(path);
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total) + " OK";
             } else {
@@ -130,9 +132,11 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
                 return "error: index > total";
             }
         }
-        case ProtoBuf::Method::Delete:
+        case ProtoBuf::Method::Delete: {
+            File file{path.string()};
             file.DeleteActualFile();
             return "delete file OK";
+        }
         default:
             throw std::runtime_error("unknown method");
     }

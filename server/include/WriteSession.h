@@ -4,6 +4,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <sstream>
+#include <thread>
 
 #include "ProtoBuf.h"
 #include "spdlog/spdlog.h"
@@ -20,6 +22,7 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
     void enqueue(const ProtoBuf& buf) {
         std::lock_guard<std::mutex> lock(mtx);
         writeQueue.push(buf);
+        info("size = {}", writeQueue.size());
     }
 
     void doWrite() {
@@ -35,7 +38,10 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
                           [self = shared_from_this()](const asio::error_code& e,
                                                       std::size_t size) {
                               if (e) error("async_write: {}", e.message());
-                              debug("write: {} byte", size);
+                              std::stringstream ss;
+                              ss << std::this_thread::get_id();
+                              debug("threadid = {} ;write: {} byte", ss.str(),
+                                    size);
                               self->doWrite();
                           });
     }
