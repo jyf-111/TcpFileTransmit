@@ -3,7 +3,9 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 #include <winsock2.h>
+
 #include <cstring>
+#include <utility>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
@@ -24,6 +26,9 @@ static void HelpMarker(const char *desc) {
         ImGui::EndTooltip();
     }
 }
+
+app::ViewModule::ViewModule(std::shared_ptr<TcpClient> tcpClient)
+    : client(std::move(tcpClient)) {}
 
 std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {
     return client;
@@ -79,7 +84,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
             std::string filePath =
                 ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
-            std::memset(savePath,0,sizeof savePath);
+            std::memset(savePath, 0, sizeof savePath);
             std::copy(filePath.begin(), filePath.end(), savePath);
             client->setSavePath(savePath);
             debug("select dir: {}", filePathName);
@@ -123,12 +128,12 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
                 ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
             debug("add file: {}", filePathName);
-            std::memset(selectPath,0,sizeof selectPath);
+            std::memset(selectPath, 0, sizeof selectPath);
             std::copy(filePathName.begin(), filePathName.end(), selectPath);
             // get file name
             std::filesystem::path path(selectPath);
             std::string fileName = path.filename().string();
-            std::memset(sendToPath,0,sizeof sendToPath);
+            std::memset(sendToPath, 0, sizeof sendToPath);
             std::copy(fileName.begin(), fileName.end(), sendToPath);
         }
         // close

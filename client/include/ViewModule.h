@@ -26,8 +26,8 @@ class ViewModule {
     /**
      * @brief tcp TcpClient
      */
-    std::shared_ptr<TcpClient> client = std::make_shared<TcpClient>();
-    ViewModule() = default;
+    std::shared_ptr<TcpClient> client;
+    ViewModule(std::shared_ptr<TcpClient>);
     ViewModule(const ViewModule &) = delete;
     ViewModule(ViewModule &&) = delete;
     ViewModule &operator=(const ViewModule &) = delete;

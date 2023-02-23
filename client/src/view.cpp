@@ -2,6 +2,10 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
+#include <exception>
+#include <memory>
+
 #include "TcpClient.h"
 #include "ViewModule.h"
 #include "imgui_impl_opengl3.h"
@@ -16,6 +20,9 @@
 #endif
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>  // Will drag system OpenGL headersw.h"
+
+app::view::view(std::shared_ptr<app::ViewModule> viewModule)
+    : viewModule(std::move(viewModule)) {}
 
 app::view::~view() {
     // Cleanup
@@ -35,7 +42,7 @@ void app::view::glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-void app::view::init() {
+void app::view::init(std::weak_ptr<Controller> controller) {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return;

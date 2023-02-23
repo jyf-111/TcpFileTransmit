@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -10,8 +11,18 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "asio/io_context.hpp"
 
 using namespace spdlog;
+
+app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
+    timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
+    socketPtr = std::make_shared<asio::ip::tcp::socket>(*io);
+    session = std::make_shared<WriteSession>(socketPtr);
+    resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
+}
+
+std::shared_ptr<asio::io_context> app::TcpClient::getIoContext() { return io; }
 
 std::string app::TcpClient::getIp() const { return ip; }
 
@@ -23,16 +34,18 @@ void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
 
     if (domain.size() != 0) {
-        auto iter = resolver.resolve(domain, std::to_string(port));
-        setIp(iter->endpoint().address().to_string());
+        try {
+            auto iter = resolver->resolve(domain, std::to_string(port));
+            setIp(iter->endpoint().address().to_string());
+        } catch (const asio::error_code &e) {
+            error("{}", e.message());
+        }
     }
 }
 
 std::size_t app::TcpClient::getPort() const { return port; }
 
 void app::TcpClient::setPort(const std::size_t &port) { this->port = port; }
-
-std::string app::TcpClient::getLevel() const { return level; }
 
 void app::TcpClient::setFilesplit(const std::size_t &size) {
     this->filesplit = size;
@@ -55,24 +68,6 @@ void app::TcpClient::setSavePath(const std::string &savePath) {
 }
 
 const std::string app::TcpClient::getSavePath() { return savePath; }
-
-void app::TcpClient::setLevel(const std::string &level) {
-    if (level == "debug") {
-        set_level(spdlog::level::debug);
-    } else if (level == "info") {
-        set_level(spdlog::level::info);
-    } else if (level == "warn") {
-        set_level(spdlog::level::warn);
-    } else if (level == "err") {
-        set_level(spdlog::level::err);
-    } else if (level == "critical") {
-        set_level(spdlog::level::critical);
-    } else if (level == "off") {
-        set_level(spdlog::level::off);
-    } else {
-        set_level(spdlog::level::info);
-    }
-}
 
 void app::TcpClient::handleOutPutTime(std::string &result) {
     std::time_t t = std::time(nullptr);
@@ -172,7 +167,7 @@ void app::TcpClient::handleRead() {
 
 void app::TcpClient::registerQuery() {
     if (connectFlag == false) return;
-    timer.async_wait([self = shared_from_this()](const asio::error_code &e) {
+    timer->async_wait([self = shared_from_this()](const asio::error_code &e) {
         if (e) {
             error("{}", e.message());
             return;
@@ -180,7 +175,7 @@ void app::TcpClient::registerQuery() {
         self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
                                 std::vector<char>{'n', 'u', 'l', 'l'}});
         self->session->doWrite();
-        self->timer.expires_from_now(std::chrono::seconds(1));
+        self->timer->expires_from_now(std::chrono::seconds(1));
         self->registerQuery();
     });
 }
@@ -245,14 +240,3 @@ void app::TcpClient::disconnect() {
 }
 
 bool app::TcpClient::isConnected() { return connectFlag; }
-
-void app::TcpClient::run() {
-    std::thread([this]() {
-        asio::io_context::work work(io);
-        try {
-            io.run();
-        } catch (const asio::system_error &e) {
-            error(e.what());
-        }
-    }).detach();
-}

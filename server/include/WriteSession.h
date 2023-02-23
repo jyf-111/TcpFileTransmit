@@ -22,7 +22,6 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
     void enqueue(const ProtoBuf& buf) {
         std::lock_guard<std::mutex> lock(mtx);
         writeQueue.push(buf);
-        info("size = {}", writeQueue.size());
     }
 
     void doWrite() {
@@ -40,8 +39,6 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
                               if (e) error("async_write: {}", e.message());
                               std::stringstream ss;
                               ss << std::this_thread::get_id();
-                              debug("threadid = {} ;write: {} byte", ss.str(),
-                                    size);
                               self->doWrite();
                           });
     }
