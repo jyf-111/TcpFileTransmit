@@ -3,9 +3,9 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <exception>
 #include <memory>
 
+#include "Controller.h"
 #include "TcpClient.h"
 #include "ViewModule.h"
 #include "imgui_impl_opengl3.h"
@@ -43,6 +43,7 @@ void app::view::glfw_error_callback(int error, const char* description) {
 }
 
 void app::view::init(std::weak_ptr<Controller> controller) {
+    this->controller = controller;
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return;
@@ -140,7 +141,12 @@ void app::view::loop() {
             viewModule->render_get_window(show_window);
             viewModule->render_query_window(show_window);
         } else {
-            viewModule->client->disconnect();
+            auto ctl = controller.lock();
+            if (ctl != nullptr) {
+                ctl->stop();
+            } else {
+                warn("ctl is nullptr");
+            }
             break;
         }
 
