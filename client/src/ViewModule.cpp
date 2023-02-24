@@ -3,12 +3,16 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
+#include <cstring>
+#include <forward_list>
+#include <iterator>
 #include <string>
+#include <string_view>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
 #include "TcpClient.h"
-
 
 using namespace spdlog;
 
@@ -47,19 +51,32 @@ void app::ViewModule::render_resultUI(bool &show_window) {
 void app::ViewModule::render_query_window(bool &show_window) {
     ImGui::Begin("Tcp File query", &show_window);
 
-    ImGui::Text("query file");
     ImGui::BulletText("path:");
     ImGui::SameLine();
     ImGui::InputTextWithHint("", "file path", queryPath,
                              IM_ARRAYSIZE(queryPath));
-    client->handleQuery(queryPath);
-
-    std::string res = client->getDir();
-    char *s = const_cast<char *>(res.c_str());
-    ImGui::InputTextMultiline("##result", s, res.size(),
-                              ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 50),
-                              ImGuiInputTextFlags_ReadOnly);
+    if (ImGui::Button("<back")) {
+        std::string_view s{std::begin(queryPath),
+                           std::begin(queryPath) + std::strlen(queryPath) - 1};
+        s = s.substr(0, s.find_last_of('\\'));
+        std::copy(s.begin(), s.end(), std::begin(queryPath));
+        queryPath[s.size()] = '\0';
+    }
+    const auto &res = client->getDirList();
+    for (auto item : res) {
+        if (ImGui::Selectable(item.c_str())) {
+            if (*item.rbegin() == '\\') {
+                // is dir
+                std::copy(item.begin(), item.end(), queryPath);
+            } else {
+                // is file
+                std::copy(item.begin(), item.end(), getPath);
+                std::copy(item.begin(), item.end(), deletePath);
+            }
+        }
+    }
     ImGui::End();
+    client->handleQuery(queryPath);
 }
 
 void app::ViewModule::render_get_window(bool &show_window) {

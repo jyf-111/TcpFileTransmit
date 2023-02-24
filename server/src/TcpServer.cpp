@@ -213,7 +213,7 @@ void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socketPtr,
                 result = self->handleFileAction(recv);
             } catch (const std::exception& e) {
                 error(e.what());
-                result = "some error occured";
+                result = std::string(e.what());
             }
             if (result.index() == 0) {
                 const auto& str = std::get<std::string>(result);

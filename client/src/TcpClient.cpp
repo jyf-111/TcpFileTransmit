@@ -57,15 +57,26 @@ void app::TcpClient::setResult(const std::string &result) {
 
 std::string app::TcpClient::getResult() { return result; }
 
-void app::TcpClient::setDir(const std::string &dir) { this->dir = dir; }
+void app::TcpClient::setDir(const std::vector<std::string> &dir) {
+    this->dirList = std::move(dir);
+}
 
-std::string app::TcpClient::getDir() { return dir; }
+const std::vector<std::string> &app::TcpClient::getDirList() { return dirList; }
 
 void app::TcpClient::setSavePath(const std::string &savePath) {
     this->savePath = savePath;
 }
 
 const std::string app::TcpClient::getSavePath() { return savePath; }
+
+void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
+    std::stringstream ss(dir);
+    std::string item;
+    int i = 0;
+    while (std::getline(ss, item, '\n')) {
+        this->dirList.push_back(item);
+    };
+}
 
 void app::TcpClient::handleOutPutTime(std::string &result) {
     std::time_t t = std::time(nullptr);
@@ -149,8 +160,9 @@ void app::TcpClient::handleRead() {
                 } else {
                     const auto &data = protoBuf.GetData();
                     if (protoBuf.GetIsDir()) {
-                        self->dir.clear();
-                        self->dir += std::string(data.begin(), data.end());
+                        self->dirList.clear();
+                        self->ConvertDirStringToList(
+                            std::string(data.begin(), data.end()));
                     } else {
                         self->result.clear();
                         self->handleOutPutTime(self->result);

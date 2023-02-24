@@ -5,6 +5,7 @@
 #include <asio.hpp>
 #include <filesystem>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 #include "WriteSession.h"
@@ -24,7 +25,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::shared_ptr<asio::ip::tcp::resolver> resolver;
 
     std::string result;
-    std::string dir;
+    std::vector<std::string> dirList;
     std::filesystem::path selectPath = ".";
     std::string savePath = ".";
     bool connectFlag = false;
@@ -33,6 +34,11 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string ip = "127.0.0.1";
     std::size_t port = 8000;
     std::size_t filesplit = 65536 * 3;
+
+    /**
+     * convert dir string to list
+     */
+    void ConvertDirStringToList(const std::string &);
 
     /**
      * handle read
@@ -61,8 +67,8 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setFilesplit(const std::size_t &);
     void setResult(const std::string &);
     std::string getResult();
-    void setDir(const std::string &dir);
-    std::string getDir();
+    void setDir(const std::vector<std::string> &dir);
+    const std::vector<std::string> &getDirList();
     void setSavePath(const std::string &savePath);
     const std::string getSavePath();
 

@@ -86,7 +86,7 @@ void app::view::init(std::weak_ptr<Controller> controller) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable
     // Keyboard Controls
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable
     // Gamepad Controls
@@ -130,7 +130,8 @@ void app::view::loop() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
 
         // start your code here
         if (show_window) {

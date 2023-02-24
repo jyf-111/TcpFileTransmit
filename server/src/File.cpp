@@ -25,13 +25,15 @@ void File::ReNameFile(const std::filesystem::path &path) {
 }
 
 std::string File::QueryDirectory() const {
-    if (path.empty() || !std::filesystem::exists(path) ||
-        !std::filesystem::is_directory(path)) {
-        throw std::runtime_error("file path is not valid");
+    if (path.empty() || !std::filesystem::exists(path)) {
+        throw std::runtime_error("path is empty or is not exist");
     }
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
-        tmp += p.path().string() + "\n";
+        if (p.is_directory())
+            tmp += p.path().string() + "\\\n";
+        else
+            tmp += p.path().string() + "\n";
     }
     return tmp;
 }
@@ -41,7 +43,7 @@ const std::filesystem::path &File::GetFilePath() const { return path; }
 const std::vector<std::vector<char>> File::GetFileDataSplited(
     const std::size_t &slice) const {
     if (path.empty() || !std::filesystem::is_regular_file(path)) {
-        throw std::runtime_error("file path is not valid");
+        throw std::runtime_error("path is empty or is not regular file");
     }
     std::ifstream ifs(path, std::ios::binary);
     std::vector<std::vector<char>> file_data;
