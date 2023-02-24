@@ -3,10 +3,6 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
-#include <cstring>
-#include <forward_list>
-#include <iterator>
 #include <string>
 #include <string_view>
 
@@ -58,18 +54,23 @@ void app::ViewModule::render_query_window(bool &show_window) {
     if (ImGui::Button("<back")) {
         std::string_view s{std::begin(queryPath),
                            std::begin(queryPath) + std::strlen(queryPath) - 1};
-        s = s.substr(0, s.find_last_of('\\'));
-        std::copy(s.begin(), s.end(), std::begin(queryPath));
-        queryPath[s.size()] = '\0';
+        if (s.size() >= 1) {
+            s = s.substr(0, s.find_last_of('\\'));
+            std::copy(s.begin(), s.end(), std::begin(queryPath));
+            queryPath[s.size()] = '\0';
+        }
     }
     const auto &res = client->getDirList();
     for (auto item : res) {
         if (ImGui::Selectable(item.c_str())) {
             if (*item.rbegin() == '\\') {
                 // is dir
+                std::memset(std::begin(queryPath), 0, std::strlen(queryPath));
                 std::copy(item.begin(), item.end(), queryPath);
             } else {
                 // is file
+                std::memset(std::begin(getPath), 0, std::strlen(getPath));
+                std::memset(std::begin(deletePath), 0, std::strlen(deletePath));
                 std::copy(item.begin(), item.end(), getPath);
                 std::copy(item.begin(), item.end(), deletePath);
             }

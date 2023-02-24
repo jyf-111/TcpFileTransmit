@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "Controller.h"
-#include "TcpClient.h"
 #include "ViewModule.h"
 #include "imgui_impl_opengl3.h"
 
