@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "File.h"
@@ -16,9 +15,9 @@ using namespace spdlog;
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
-    socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<WriteSession>(socketPtr);
     resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
+    ssl_context = std::make_shared<asio::ssl::context>(asio::ssl::context::tls);
 }
 
 std::shared_ptr<asio::io_context> app::TcpClient::getIoContext() { return io; }
@@ -220,44 +219,57 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    debug("connectting");
-    asio::ip::tcp::endpoint ep =
-        asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
-    ;
-    ssl_context.set_verify_mode(asio::ssl::verify_peer);
-    // ssl_context.load_verify_file("server.crt");
+    info("connectting");
+    // FIXME: must declare in class member and init in constructor and here
+    ssl_context = std::make_shared<asio::ssl::context>(asio::ssl::context::tls);
+    socketPtr = std::make_shared<ssl_socket>(*io, *ssl_context);
+    session = std::make_shared<WriteSession>(socketPtr);
+    // NOTE: must after socket
+    ssl_context->set_verify_mode(asio::ssl::verify_peer);
 
     socketPtr->next_layer().async_connect(
-        ep, [this](const asio::system_error &e) {
+        asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
+        [self = shared_from_this()](const asio::system_error &e) {
             if (e.code()) {
-                warn("connect {}:{} failed: {}", ip, port, e.what());
-                // NOTE:
-                // windows 20s
-                // linux 127s
-                connect();
+                warn("connect {}:{} failed: {}", self->ip, self->port,
+                     e.what());
+                self->timer->expires_from_now(std::chrono::seconds(1));
+                self->timer->async_wait([self](const asio::system_error &e) {
+                    // NOTE:
+                    // windows 20s
+                    // linux 127s
+                    self->connect();
+                });
                 return;
             }
-            info("connect {}:{} success ", ip, port);
-            socketPtr->async_handshake(asio::ssl::stream_base::client,
-                                       [this](const asio::system_error &e) {
-                                           if (e.code()) {
-                                               error("handshake failed: {}",
-                                                     e.what());
-                                               return;
-                                           }
-                                           info("handshake success");
-                                           connectFlag = true;
-                                           handleRead();
-                                           registerQuery();
-                                       });
+            info("connect {}:{} success ", self->ip, self->port);
+            self->socketPtr->async_handshake(
+                asio::ssl::stream_base::client,
+                [self](const asio::system_error &e) {
+                    if (e.code()) {
+                        error("handshake failed: {}", e.what());
+                        return;
+                    }
+                    info("handshake success");
+                    self->connectFlag = true;
+                    self->handleRead();
+                    self->registerQuery();
+                });
         });
 }
 
 void app::TcpClient::disconnect() {
     if (connectFlag) {
         connectFlag = false;
-        socketPtr->shutdown();
-        info("disconnect success");
+        socketPtr->async_shutdown(
+            [self = shared_from_this()](const asio::system_error &e) {
+                if (e.code()) {
+                    error("shutdown failed: {}", e.what());
+                    return;
+                }
+                info("shutdown success");
+                self->socketPtr->next_layer().close();
+            });
     } else {
         info("client is disconnect");
     }

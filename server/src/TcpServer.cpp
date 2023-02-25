@@ -2,7 +2,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <memory>
@@ -13,7 +12,6 @@
 #include "File.h"
 #include "ProtoBuf.h"
 #include "WriteSession.h"
-#include "asio/post.hpp"
 
 using namespace spdlog;
 
@@ -63,10 +61,14 @@ void TcpServer::setThreads(const std::size_t& threads) {
 }
 
 void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
-    socket_ptr->shutdown();
-    info("socket close");
+    socket_ptr->async_shutdown(
+        [self = shared_from_this(), socket_ptr](const asio::error_code& e) {
+            if (e) {
+                error(e.message());
+            }
+            socket_ptr->lowest_layer().close();
+        });
 }
-
 TcpServer::TcpServer() {
     ssl_context.set_options(asio::ssl::context::default_workarounds |
                             asio::ssl::context::no_sslv2);
@@ -92,16 +94,22 @@ void TcpServer::run() {
     threadPool.join();
 }
 
-void TcpServer::handleSignal() {
-    sig.async_wait([self = shared_from_this()](const std::error_code& e,
-                                               int signal_number) {
+void TcpServer::handleSignal(std::weak_ptr<ssl_socket> ptr) {
+    if (ptr.expired()) {
+        return;
+    };
+    auto socket_ptr = ptr.lock();
+    sig.async_wait([socket_ptr, self = shared_from_this()](
+                       const std::error_code& e, int signal_number) {
         switch (signal_number) {
             case SIGINT:
                 info("SIGINT received, shutting down");
+                self->handleCloseSocket(socket_ptr);
                 self->io.stop();
                 break;
             case SIGTERM:
                 info("SIGTerm received, shutting down");
+                self->handleCloseSocket(socket_ptr);
                 self->io.stop();
                 break;
             default:
@@ -154,19 +162,18 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
 }
 
 void TcpServer::handleAccept() {
-    // std::shared_ptr<asio::ip::tcp::socket> socketPtr =
-    //     std::make_shared<asio::ip::tcp::socket>(io);
     std::shared_ptr<ssl_socket> socketPtr =
         std::make_shared<ssl_socket>(io, ssl_context);
 
+    handleSignal(socketPtr);
     std::shared_ptr<WriteSession> writeSession =
         std::make_shared<WriteSession>(socketPtr);
 
-    auto ep = asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port);
-    acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
+    acceptor = std::make_unique<asio::ip::tcp::acceptor>(
+        io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
 
-    debug("waiting connection");
-    acceptor.async_accept(
+    info("waiting connection");
+    acceptor->async_accept(
         socketPtr->lowest_layer(), [self = shared_from_this(), socketPtr,
                                     writeSession](const asio::error_code& e) {
             info("connection accepted");

@@ -1,6 +1,5 @@
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
 #include <asio.hpp>
 #include <memory>
 
@@ -31,7 +30,6 @@ class Controller {
         }
     }
     void run() {
-        server->handleSignal();
         server->handleAccept();
         server->run();
     }

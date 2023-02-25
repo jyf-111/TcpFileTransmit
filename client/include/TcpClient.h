@@ -6,11 +6,9 @@
 #include <asio/ssl.hpp>
 #include <filesystem>
 #include <memory>
-#include <string_view>
 #include <vector>
 
 #include "WriteSession.h"
-#include "asio/io_context.hpp"
 
 using namespace spdlog;
 
@@ -19,13 +17,10 @@ namespace app {
  * @brief TcpClient
  */
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
-    using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
-    std::shared_ptr<asio::io_service> io;
-    asio::ssl::context ssl_context{asio::ssl::context::tls};
-    std::shared_ptr<asio::steady_timer> timer;
-    std::shared_ptr<ssl_socket> socketPtr;
-    std::shared_ptr<WriteSession> session;
-    std::shared_ptr<asio::ip::tcp::resolver> resolver;
+    std::string domain;
+    std::string ip = "127.0.0.1";
+    std::size_t port = 8000;
+    std::size_t filesplit = 65536 * 3;
 
     std::string result;
     std::vector<std::string> dirList;
@@ -33,11 +28,13 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string savePath = ".";
     bool connectFlag = false;
 
-    std::string domain;
-    std::string ip = "127.0.0.1";
-    std::size_t port = 8000;
-    std::size_t filesplit = 65536 * 3;
-
+    using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
+    std::shared_ptr<asio::io_service> io;
+    std::shared_ptr<asio::ssl::context> ssl_context;
+    std::shared_ptr<asio::steady_timer> timer;
+    std::shared_ptr<ssl_socket> socketPtr;
+    std::shared_ptr<WriteSession> session;
+    std::shared_ptr<asio::ip::tcp::resolver> resolver;
     /**
      * convert dir string to list
      */
