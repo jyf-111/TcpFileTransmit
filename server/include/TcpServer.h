@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <csignal>
 #include <filesystem>
 #include <memory>
@@ -11,7 +12,9 @@
 #include "WriteSession.h"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
+    using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     asio::io_context io;
+    asio::ssl::context ssl_context{asio::ssl::context::tls};
     asio::ip::tcp::acceptor acceptor{io};
     asio::signal_set sig{io, SIGINT, SIGTERM};
 
@@ -23,7 +26,7 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     /**
      * handle close socket
      */
-    void handleCloseSocket(std::shared_ptr<asio::ip::tcp::socket>);
+    void handleCloseSocket(std::shared_ptr<ssl_socket>);
 
     /**
      * handle File Action
@@ -34,10 +37,10 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     /**
      * handle read
      */
-    void handleRead(std::shared_ptr<asio::ip::tcp::socket>,std::shared_ptr<WriteSession>);
+    void handleRead(std::shared_ptr<ssl_socket>, std::shared_ptr<WriteSession>);
 
    public:
-    TcpServer() = default;
+    TcpServer();
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
     TcpServer &operator=(const TcpServer &) = delete;
@@ -62,7 +65,6 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
      * handle accept
      */
     void handleAccept();
-
     /**
      * run
      */

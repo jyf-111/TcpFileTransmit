@@ -62,13 +62,23 @@ void TcpServer::setThreads(const std::size_t& threads) {
     }
 }
 
-void TcpServer::handleCloseSocket(
-    std::shared_ptr<asio::ip::tcp::socket> socket_ptr) {
-    socket_ptr->close();
+void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
+    socket_ptr->shutdown();
     info("socket close");
 }
 
+TcpServer::TcpServer() {
+    ssl_context.set_options(asio::ssl::context::default_workarounds |
+                            asio::ssl::context::no_sslv2);
+    ssl_context.set_verify_mode(asio::ssl::verify_peer |
+                                asio::ssl::verify_fail_if_no_peer_cert);
+    ssl_context.set_verify_mode(1);
+    ssl_context.use_certificate_file("server.pem", asio::ssl::context::pem);
+    ssl_context.use_private_key_file("private.key", asio::ssl::context::pem);
+}
+
 void TcpServer::run() {
+    asio::io_context::work work(io);
     asio::thread_pool threadPool(threads);
     for (std::size_t i = 0; i < threads; ++i) {
         asio::post(threadPool, [self = shared_from_this()] {
@@ -144,8 +154,10 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
 }
 
 void TcpServer::handleAccept() {
-    std::shared_ptr<asio::ip::tcp::socket> socketPtr =
-        std::make_shared<asio::ip::tcp::socket>(io);
+    // std::shared_ptr<asio::ip::tcp::socket> socketPtr =
+    //     std::make_shared<asio::ip::tcp::socket>(io);
+    std::shared_ptr<ssl_socket> socketPtr =
+        std::make_shared<ssl_socket>(io, ssl_context);
 
     std::shared_ptr<WriteSession> writeSession =
         std::make_shared<WriteSession>(socketPtr);
@@ -154,24 +166,28 @@ void TcpServer::handleAccept() {
     acceptor = std::move(asio::ip::tcp::acceptor(io, ep));
 
     debug("waiting connection");
-    acceptor.async_accept(*socketPtr,
-                          [self = shared_from_this(), socketPtr,
-                           writeSession](const asio::error_code& e) {
-                              if (e) {
-                                  error("async_accept: " + e.message());
-                              } else {
-                                  self->handleRead(socketPtr, writeSession);
-                                  info("connection accepted");
-                              }
-                              self->handleAccept();
-                          });
+    acceptor.async_accept(
+        socketPtr->lowest_layer(), [self = shared_from_this(), socketPtr,
+                                    writeSession](const asio::error_code& e) {
+            info("connection accepted");
+            self->handleAccept();
+            if (e) {
+                error("async_accept: " + e.message());
+            } else {
+                socketPtr->async_handshake(
+                    asio::ssl::stream_base::server,
+                    [self, socketPtr, writeSession](const asio::error_code& e) {
+                        info("handshake success");
+                        self->handleRead(socketPtr, writeSession);
+                    });
+            }
+        });
 }
 
-void TcpServer::handleRead(std::shared_ptr<asio::ip::tcp::socket> socketPtr,
+void TcpServer::handleRead(std::shared_ptr<ssl_socket> socketPtr,
                            std::shared_ptr<WriteSession> writeSession) {
     debug("new read");
     auto streambuf = std::make_shared<asio::streambuf>();
-
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
     asio::async_read(

@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <filesystem>
 #include <memory>
 #include <string_view>
@@ -18,9 +19,11 @@ namespace app {
  * @brief TcpClient
  */
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
+    using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_service> io;
+    asio::ssl::context ssl_context{asio::ssl::context::tls};
     std::shared_ptr<asio::steady_timer> timer;
-    std::shared_ptr<asio::ip::tcp::socket> socketPtr;
+    std::shared_ptr<ssl_socket> socketPtr;
     std::shared_ptr<WriteSession> session;
     std::shared_ptr<asio::ip::tcp::resolver> resolver;
 
@@ -67,7 +70,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setFilesplit(const std::size_t &);
     void setResult(const std::string &);
     std::string getResult();
-    void setDir(const std::vector<std::string> &dir);
+    void setDirList(const std::vector<std::string> &dir);
     const std::vector<std::string> &getDirList();
     void setSavePath(const std::string &savePath);
     const std::string getSavePath();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -11,12 +12,13 @@
 #include "spdlog/spdlog.h"
 
 class WriteSession : public std::enable_shared_from_this<WriteSession> {
-    std::shared_ptr<asio::ip::tcp::socket> socketPtr;
+    using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
+    std::shared_ptr<ssl_socket> socketPtr;
     std::queue<ProtoBuf> writeQueue;
     std::mutex mtx;
 
    public:
-    WriteSession(std::shared_ptr<asio::ip::tcp::socket> socketPtr)
+    WriteSession(std::shared_ptr<ssl_socket> socketPtr)
         : socketPtr(std::move(socketPtr)) {}
 
     void enqueue(const ProtoBuf& buf) {
@@ -37,8 +39,6 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
                           [self = shared_from_this()](const asio::error_code& e,
                                                       std::size_t size) {
                               if (e) error("async_write: {}", e.message());
-                              std::stringstream ss;
-                              ss << std::this_thread::get_id();
                               self->doWrite();
                           });
     }
