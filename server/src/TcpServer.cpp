@@ -150,15 +150,18 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
             return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
-            File file{path.string() + ".sw"};
-            file.SetFileData(data);
+            fileWriteStrand.post([path, data] {
+                File file{path.string() + ".sw"};
+                file.SetFileData(data);
+            });
             auto index = protoBuf.GetIndex();
             auto total = protoBuf.GetTotal();
             if (index < total) {
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total);
             } else if (index == total) {
-                file.ReNameFile(path);
+                fileWriteStrand.post(
+                    [path] { File::ReNameFile(path.string() + ".sw", path); });
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total) + " OK";
             } else {

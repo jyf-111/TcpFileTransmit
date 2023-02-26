@@ -13,15 +13,13 @@ File::File() = default;
 
 File::File(const std::filesystem::path &path) : path(std::move(path)) {}
 
-void File::PathIsValid() const {}
-
 const std::size_t File::GetFileSize() const {
     return std::filesystem::file_size(path);
 }
 
-void File::ReNameFile(const std::filesystem::path &path) {
-    std::filesystem::rename(this->path, path);
-    this->path = path;
+void File::ReNameFile(const std::filesystem::path &from,
+                      const std::filesystem::path &to) {
+    std::filesystem::rename(from, to);
 }
 
 std::string File::QueryDirectory() const {

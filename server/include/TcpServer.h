@@ -10,6 +10,7 @@
 
 #include "ProtoBuf.h"
 #include "WriteSession.h"
+#include "asio/io_context.hpp"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::string ip = "127.0.0.1";
@@ -22,6 +23,7 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     asio::io_context io;
+    asio::io_context::strand fileWriteStrand{io};
     asio::ssl::context ssl_context{asio::ssl::context::tls};
     asio::signal_set sig{io, SIGINT, SIGTERM};
     std::unique_ptr<asio::ip::tcp::acceptor> acceptor;

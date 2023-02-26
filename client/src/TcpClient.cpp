@@ -14,6 +14,7 @@
 using namespace spdlog;
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
+    fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
     timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
     session = std::make_shared<WriteSession>(socketPtr);
     resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
@@ -138,9 +139,12 @@ void app::TcpClient::handleRead() {
 
             if (ProtoBuf::Method::Post == protoBuf.GetMethod()) {
                 if (protoBuf.GetIsFile()) {
-                    File file(self->savePath + "/" +
-                              protoBuf.GetPath().filename().string() + ".sw");
-                    file.SetFileData(protoBuf.GetData());
+                    self->fileWriteStrand->post([self, protoBuf]() {
+                        File file(self->savePath + "/" +
+                                  protoBuf.GetPath().filename().string() +
+                                  ".sw");
+                        file.SetFileData(protoBuf.GetData());
+                    });
                     const auto &index = protoBuf.GetIndex();
                     const auto &total = protoBuf.GetTotal();
                     self->result.clear();
@@ -149,8 +153,13 @@ void app::TcpClient::handleRead() {
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" + std::to_string(total);
                     } else if (index == total) {
-                        file.ReNameFile(self->savePath + "/" +
-                                        protoBuf.GetPath().filename().string());
+                        self->fileWriteStrand->post([self, protoBuf]() {
+                            const auto &tmp =
+                                self->savePath + "/" +
+                                protoBuf.GetPath().filename().string();
+                            File::ReNameFile(tmp + ".sw", tmp);
+                        });
+
                         self->result +=
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" +

@@ -18,14 +18,10 @@ class File {
     File &operator=(File &&) = default;
 
     /**
-     * @brief test FilePath is empty
-     */
-    void PathIsValid() const;
-
-    /**
      * @brief rename file
      */
-    void ReNameFile(const std::filesystem::path &);
+    static void ReNameFile(const std::filesystem::path &,
+                           const std::filesystem::path &);
     /**
      * @brief get file size
      * @return file size

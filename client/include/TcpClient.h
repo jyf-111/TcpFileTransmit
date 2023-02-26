@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "WriteSession.h"
+#include "asio/io_context.hpp"
 
 using namespace spdlog;
 
@@ -30,6 +31,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_service> io;
+    std::shared_ptr<asio::io_context::strand> fileWriteStrand;
     std::shared_ptr<asio::ssl::context> ssl_context;
     std::shared_ptr<asio::steady_timer> timer;
     std::shared_ptr<ssl_socket> socketPtr;
