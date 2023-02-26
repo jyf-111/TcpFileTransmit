@@ -35,7 +35,7 @@ void Controller::readProperties() {
         client->setIp(value["ip"].asString());
         client->setPort(value["port"].asLargestUInt());
         client->setDomain(value["domain"].asString());
-        client->setFilesplit(value["splitsize"].asLargestUInt());
+        client->setFilesplit(value["filesplit"].asLargestUInt());
 
         level = value["log"].asString();
         setLevel(level);

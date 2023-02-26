@@ -60,6 +60,22 @@ void TcpServer::setThreads(const std::size_t& threads) {
     }
 }
 
+[[nodiscard]] std::string TcpServer::getCertificate() const {
+    return this->certificate;
+}
+
+void TcpServer::setCertificate(const std::string& certificate) {
+    this->certificate = certificate;
+}
+
+[[nodiscard]] std::string TcpServer::getPrivateKey() const {
+    return private_key;
+}
+
+void TcpServer::setPrivateKey(const std::string& private_key) {
+    this->private_key = private_key;
+}
+
 void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
     socket_ptr->async_shutdown(
         [self = shared_from_this(), socket_ptr](const asio::error_code& e) {
@@ -69,7 +85,7 @@ void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
             socket_ptr->lowest_layer().close();
         });
 }
-TcpServer::TcpServer() {
+void TcpServer::init() {
     ssl_context.set_options(asio::ssl::context::default_workarounds |
                             asio::ssl::context::no_sslv2);
     ssl_context.set_verify_mode(asio::ssl::verify_peer |

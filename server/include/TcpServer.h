@@ -17,6 +17,8 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::string level = "info";
     std::size_t filesplit = 65536 * 4;
     std::size_t threads;
+    std::string certificate;
+    std::string private_key;
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     asio::io_context io;
@@ -41,7 +43,7 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     void handleRead(std::shared_ptr<ssl_socket>, std::shared_ptr<WriteSession>);
 
    public:
-    TcpServer();
+    TcpServer() = default;
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
     TcpServer &operator=(const TcpServer &) = delete;
@@ -57,6 +59,10 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     void setFilesplit(const std::size_t &);
     [[nodiscard]] std::size_t getThreads() const;
     void setThreads(const std::size_t &);
+    [[nodiscard]] std::string getCertificate() const;
+    void setCertificate(const std::string &);
+    [[nodiscard]] std::string getPrivateKey() const;
+    void setPrivateKey(const std::string &);
 
     /**
      * handle signal
@@ -66,6 +72,10 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
      * handle accept
      */
     void handleAccept();
+    /**
+     * init
+     */
+    void init();
     /**
      * run
      */
