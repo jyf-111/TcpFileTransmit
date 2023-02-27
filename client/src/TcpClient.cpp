@@ -16,7 +16,7 @@ using namespace spdlog;
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
     timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
-    session = std::make_shared<WriteSession>(socketPtr);
+    session = std::make_shared<WriteSession>(socketPtr, io);
     resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
 }
 
@@ -192,7 +192,6 @@ void app::TcpClient::registerQuery() {
         }
         self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
                                 std::vector<char>{'n', 'u', 'l', 'l'}});
-        self->session->doWrite();
         self->timer->expires_from_now(std::chrono::seconds(3));
         self->registerQuery();
     });
@@ -205,7 +204,6 @@ void app::TcpClient::handleQuery(const std::filesystem::path &path) {
 void app::TcpClient::handleGet(const std::filesystem::path &path) {
     session->enqueue(
         {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
-    session->doWrite();
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
@@ -217,19 +215,17 @@ void app::TcpClient::handlePost(const std::filesystem::path &path,
         protobuf.SetTotal(lenth - 1);
         session->enqueue(protobuf);
     }
-    session->doWrite();
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {
     session->enqueue({ProtoBuf::Method::Delete, path,
                       std::vector<char>{'n', 'u', 'l', 'l'}});
-    session->doWrite();
 };
 
 void app::TcpClient::connect() {
     info("connectting");
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
-    session = std::make_shared<WriteSession>(socketPtr);
+    session = std::make_shared<WriteSession>(socketPtr, io);
 
     socketPtr->next_layer().async_connect(
         asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
@@ -255,6 +251,7 @@ void app::TcpClient::connect() {
                     }
                     info("handshake success");
                     self->connectFlag = true;
+                    self->session->doWrite();
                     self->handleRead();
                     self->registerQuery();
                 });

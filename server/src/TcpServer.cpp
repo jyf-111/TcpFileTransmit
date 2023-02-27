@@ -186,11 +186,11 @@ void TcpServer::handleAccept() {
     ssl_context.set_verify_mode(1);
     ssl_context.use_certificate_file("server.pem", asio::ssl::context::pem);
     ssl_context.use_private_key_file("private.key", asio::ssl::context::pem);
+
     auto socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
+    auto writeSession = std::make_shared<WriteSession>(socketPtr, io);
 
     handleSignal(socketPtr);
-    std::shared_ptr<WriteSession> writeSession =
-        std::make_shared<WriteSession>(socketPtr);
 
     acceptor = std::make_unique<asio::ip::tcp::acceptor>(
         *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
@@ -208,6 +208,7 @@ void TcpServer::handleAccept() {
                     asio::ssl::stream_base::server,
                     [self, socketPtr, writeSession](const asio::error_code& e) {
                         info("handshake success");
+                        writeSession->doWrite();
                         self->handleRead(socketPtr, writeSession);
                     });
             }
@@ -283,6 +284,5 @@ void TcpServer::handleRead(std::shared_ptr<ssl_socket> socketPtr,
                     writeSession->enqueue(ret);
                 }
             }
-            writeSession->doWrite();
         });
 }
