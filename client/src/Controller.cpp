@@ -37,8 +37,8 @@ void Controller::readProperties() {
         client->setDomain(value["domain"].asString());
         client->setFilesplit(value["filesplit"].asLargestUInt());
 
-        level = value["log"].asString();
-        setLevel(level);
+        
+        setLevel(value["log"].asString());
 
         std::size_t threads = value["threads"].asLargestUInt();
         if (threads > 1)
@@ -46,8 +46,8 @@ void Controller::readProperties() {
         else
             this->threads = std::thread::hardware_concurrency();
 
-        info("ip: {} port: {} level: {} filesplit: {}", client->getIp(),
-             client->getPort(), level, client->getFilesplitsize());
+        info("ip: {} port: {} filesplit: {}", client->getIp(),
+             client->getPort(), client->getFilesplitsize());
     } catch (std::exception& e) {
         warn("{}", e.what());
     }

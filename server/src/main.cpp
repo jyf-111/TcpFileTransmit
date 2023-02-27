@@ -30,7 +30,7 @@ class Controller {
             if (value["log"].isNull()) {
                 warn("log is null");
             } else {
-                server->setLevel(value["log"].asString());
+                setLevel(value["log"].asString());
             }
             if (value["filesplit"].isNull()) {
                 warn("filesplit is null");
@@ -53,15 +53,32 @@ class Controller {
                 server->setPrivateKey(value["privatekey"].asString());
             }
             info(
-                "ip:{} port:{} level:{} filesplit:{} threads:{} certificate: "
+                "ip:{} port:{} filesplit:{} threads:{} certificate: "
                 "{} privatekey: {}",
-                server->getIp(), server->getPort(), server->getLevel(),
-                server->getFilesplitsize(), server->getThreads(),
-                server->getCertificate(), server->getPrivateKey());
+                server->getIp(), server->getPort(), server->getFilesplitsize(),
+                server->getThreads(), server->getCertificate(),
+                server->getPrivateKey());
         } catch (std::exception& e) {
             warn("{}", e.what());
         }
     }
+
+    void setLevel(const std::string& level) {
+        if (level == "debug") {
+            set_level(spdlog::level::debug);
+        } else if (level == "info") {
+            set_level(spdlog::level::info);
+        } else if (level == "warn") {
+            set_level(spdlog::level::warn);
+        } else if (level == "err") {
+            set_level(spdlog::level::err);
+        } else if (level == "critical") {
+            set_level(spdlog::level::critical);
+        } else if (level == "off") {
+            set_level(spdlog::level::off);
+        }
+    }
+
     void run() {
         server->handleAccept();
         server->run();

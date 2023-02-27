@@ -29,25 +29,6 @@ void TcpServer::setIp(const std::string& ip) { this->ip = ip; }
 
 void TcpServer::setPort(const std::size_t& port) { this->port = port; }
 
-[[nodiscard]] std::string TcpServer::getLevel() const { return level; }
-
-void TcpServer::setLevel(const std::string& level) {
-    this->level = level;
-    if (level == "debug") {
-        set_level(spdlog::level::debug);
-    } else if (level == "info") {
-        set_level(spdlog::level::info);
-    } else if (level == "warn") {
-        set_level(spdlog::level::warn);
-    } else if (level == "err") {
-        set_level(spdlog::level::err);
-    } else if (level == "critical") {
-        set_level(spdlog::level::critical);
-    } else if (level == "off") {
-        set_level(spdlog::level::off);
-    }
-}
-
 void TcpServer::setFilesplit(const std::size_t& size) {
     this->filesplit = size;
 }

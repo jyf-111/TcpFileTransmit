@@ -6,7 +6,6 @@
 #include "view.h"
 
 class Controller : public std::enable_shared_from_this<Controller> {
-    std::string level;
     std::size_t threads;
     std::shared_ptr<asio::io_context> io;
     std::shared_ptr<app::TcpClient> client;
