@@ -182,8 +182,15 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         try {
             // NOTE: transmit file
             File file(selectPath);
-            client->handlePost(sendToPath, file.GetFileDataSplited(
-                                               0, client->getFilesplitsize()));
+
+            const auto &dirList = client->getDirList();
+            const std::string &path{selectPath};
+            const auto size = File::GetRemoteFileSize(path + ".sw", dirList);
+            const auto filesplitsize = client->getFilesplitsize();
+            const auto &splitedData =
+                file.GetFileDataSplited(size, filesplitsize);
+
+            client->handlePost(sendToPath, splitedData);
         } catch (std::exception &e) {
             error("{}", e.what());
         }

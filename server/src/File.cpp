@@ -22,6 +22,20 @@ const bool File::FileIsExist(const std::filesystem::path &path) {
     return std::filesystem::exists(path);
 }
 
+const std::size_t File::GetRemoteFileSize(
+    const std::filesystem::path &path,
+    const std::vector<std::pair<std::string, std::size_t>> dirList) {
+    std::size_t size = 0;
+    for (const auto &[filename, filesize] : dirList) {
+        if (std::filesystem::path(filename).filename().string() ==
+            path.filename().string()) {
+            size = filesize;
+            info("has remote swap file size = {}", size);
+        }
+    }
+    return size;
+}
+
 void File::ReNameFile(const std::filesystem::path &from,
                       const std::filesystem::path &to) {
     std::filesystem::rename(from, to);

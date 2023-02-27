@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <filesystem>
+#include <utility>
 #include <vector>
 
 class File {
@@ -18,6 +19,10 @@ class File {
                            const std::filesystem::path &);
     [[nodiscard]] static const std::size_t GetFileSize(
         const std::filesystem::path &);
+
+    [[nodiscard]] static const std::size_t GetRemoteFileSize(
+        const std::filesystem::path &,
+        const std::vector<std::pair<std::string, std::size_t>>);
 
     [[nodiscard]] static const bool FileIsExist(const std::filesystem::path &);
 
