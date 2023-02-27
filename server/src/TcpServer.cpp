@@ -125,7 +125,8 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
         }
         case ProtoBuf::Method::Get: {
             File file{path.string()};
-            return file.GetFileDataSplited(filesplit);
+            const auto& index = protoBuf.GetIndex();
+            return file.GetFileDataSplited(index, filesplit);
         }
         case ProtoBuf::Method::Post: {
             fileWriteStrand->post([path, data] {

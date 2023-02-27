@@ -116,7 +116,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::SameLine();
     if (ImGui::Button("get")) {
         info("get file: {}", getPath);
-        client->handleGet(getPath);
+        client->handleGet(getPath, savePath);
     }
     ImGui::End();
 }
@@ -167,7 +167,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
             // NOTE: transmit file
             File file(selectPath);
             client->handlePost(sendToPath, file.GetFileDataSplited(
-                                               client->getFilesplitsize()));
+                                               0, client->getFilesplitsize()));
         } catch (std::exception &e) {
             error("{}", e.what());
         }

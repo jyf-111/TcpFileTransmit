@@ -13,8 +13,12 @@ File::File() = default;
 
 File::File(const std::filesystem::path &path) : path(std::move(path)) {}
 
-const std::size_t File::GetFileSize() const {
+const std::size_t File::GetFileSize(const std::filesystem::path &path) {
     return std::filesystem::file_size(path);
+}
+
+const bool File::FileIsExist(const std::filesystem::path &path) {
+    return std::filesystem::exists(path);
 }
 
 void File::ReNameFile(const std::filesystem::path &from,
@@ -39,11 +43,13 @@ std::string File::QueryDirectory() const {
 const std::filesystem::path &File::GetFilePath() const { return path; }
 
 const std::vector<std::vector<char>> File::GetFileDataSplited(
-    const std::size_t &slice) const {
+    const int &index, const std::size_t &slice) const {
     if (path.empty() || !std::filesystem::is_regular_file(path)) {
         throw std::runtime_error("path is empty or is not regular file");
     }
     std::ifstream ifs(path, std::ios::binary);
+    ifs.seekg(index);
+
     std::vector<std::vector<char>> file_data;
 
     const auto size = std::filesystem::file_size(path);

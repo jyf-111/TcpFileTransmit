@@ -59,7 +59,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     const std::string getSavePath();
 
     void handleQuery(const std::filesystem::path &);
-    void handleGet(const std::filesystem::path &);
+    void handleGet(const std::filesystem::path &,const std::filesystem::path&);
     void handlePost(const std::filesystem::path &,
                     const std::vector<std::vector<char>> &);
     void handleDelete(const std::filesystem::path &);

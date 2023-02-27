@@ -201,9 +201,17 @@ void app::TcpClient::handleQuery(const std::filesystem::path &path) {
     selectPath = path;
 }
 
-void app::TcpClient::handleGet(const std::filesystem::path &path) {
-    session->enqueue(
-        {ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}});
+void app::TcpClient::handleGet(const std::filesystem::path &path,
+                               const std::filesystem::path &savepath) {
+    ProtoBuf protoBuf{ProtoBuf::Method::Get, path,
+                      std::vector<char>{'n', 'u', 'l', 'l'}};
+    const auto tmpFile =
+        savepath.string() + "/" + path.filename().string() + ".sw";
+    if (File::FileIsExist(tmpFile)) {
+        info("swap file is exist: {}", tmpFile);
+        protoBuf.SetIndex(File::GetFileSize(tmpFile));
+    }
+    session->enqueue(protoBuf);
 }
 
 void app::TcpClient::handlePost(const std::filesystem::path &path,
