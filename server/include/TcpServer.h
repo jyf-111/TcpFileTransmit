@@ -10,7 +10,6 @@
 
 #include "ProtoBuf.h"
 #include "WriteSession.h"
-#include "asio/io_context.hpp"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::string ip = "127.0.0.1";
@@ -22,30 +21,19 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::string private_key;
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
-    asio::io_context io;
-    asio::io_context::strand fileWriteStrand{io};
-    asio::ssl::context ssl_context{asio::ssl::context::tls};
-    asio::signal_set sig{io, SIGINT, SIGTERM};
+    std::shared_ptr<asio::io_context> io;
+    std::shared_ptr<asio::io_context::strand> fileWriteStrand;
+    std::shared_ptr<asio::signal_set> sig;
     std::unique_ptr<asio::ip::tcp::acceptor> acceptor;
 
-    /**
-     * handle close socket
-     */
     void handleCloseSocket(std::shared_ptr<ssl_socket>);
-
-    /**
-     * handle File Action
-     */
     auto handleFileAction(ProtoBuf &)
         -> std::variant<std::string, std::vector<std::vector<char>>>;
-
-    /**
-     * handle read
-     */
     void handleRead(std::shared_ptr<ssl_socket>, std::shared_ptr<WriteSession>);
+    void handleSignal(std::weak_ptr<ssl_socket>);
 
    public:
-    TcpServer() = default;
+    TcpServer();
     TcpServer(const TcpServer &) = delete;
     TcpServer(TcpServer &&) = delete;
     TcpServer &operator=(const TcpServer &) = delete;
@@ -66,20 +54,6 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     [[nodiscard]] std::string getPrivateKey() const;
     void setPrivateKey(const std::string &);
 
-    /**
-     * handle signal
-     */
-    void handleSignal(std::weak_ptr<ssl_socket>);
-    /**
-     * handle accept
-     */
     void handleAccept();
-    /**
-     * init
-     */
-    void init();
-    /**
-     * run
-     */
     void run();
 };

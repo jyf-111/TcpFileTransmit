@@ -13,11 +13,12 @@ class Controller : public std::enable_shared_from_this<Controller> {
     std::shared_ptr<app::ViewModule> viewModule;
     std::shared_ptr<app::view> view;
 
+    void setLevel(const std::string& level);
+
    public:
     Controller();
-    void setLevel(const std::string& level);
     void readProperties();
-    void init();
+    void initView();
     void run();
     void stop();
 };

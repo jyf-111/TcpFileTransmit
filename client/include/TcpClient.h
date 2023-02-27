@@ -9,14 +9,11 @@
 #include <vector>
 
 #include "WriteSession.h"
-#include "asio/io_context.hpp"
 
 using namespace spdlog;
 
 namespace app {
-/**
- * @brief TcpClient
- */
+
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string domain;
     std::string ip = "127.0.0.1";
@@ -32,28 +29,15 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_service> io;
     std::shared_ptr<asio::io_context::strand> fileWriteStrand;
-    std::shared_ptr<asio::ssl::context> ssl_context;
     std::shared_ptr<asio::steady_timer> timer;
     std::shared_ptr<ssl_socket> socketPtr;
     std::shared_ptr<WriteSession> session;
     std::shared_ptr<asio::ip::tcp::resolver> resolver;
-    /**
-     * convert dir string to list
-     */
+    asio::ssl::context ssl_context{asio::ssl::context::tls};
+
     void ConvertDirStringToList(const std::string &);
-
-    /**
-     * handle read
-     */
     void handleRead();
-
-    /**
-     * @brief add time to result
-     */
     void handleOutPutTime(std::string &);
-    /**
-     * register query
-     */
     void registerQuery();
 
    public:

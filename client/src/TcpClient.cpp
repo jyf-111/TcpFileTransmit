@@ -18,7 +18,6 @@ app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
     session = std::make_shared<WriteSession>(socketPtr);
     resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
-    ssl_context = std::make_shared<asio::ssl::context>(asio::ssl::context::tls);
 }
 
 std::shared_ptr<asio::io_context> app::TcpClient::getIoContext() { return io; }
@@ -229,12 +228,8 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 
 void app::TcpClient::connect() {
     info("connectting");
-    // FIXME: must declare in class member and init in constructor and here
-    ssl_context = std::make_shared<asio::ssl::context>(asio::ssl::context::tls);
-    socketPtr = std::make_shared<ssl_socket>(*io, *ssl_context);
+    socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<WriteSession>(socketPtr);
-    // NOTE: must after socket
-    ssl_context->set_verify_mode(asio::ssl::verify_peer);
 
     socketPtr->next_layer().async_connect(
         asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
@@ -242,7 +237,6 @@ void app::TcpClient::connect() {
             if (e.code()) {
                 warn("connect {}:{} failed: {}", self->ip, self->port,
                      e.what());
-                self->timer->expires_from_now(std::chrono::seconds(1));
                 self->timer->async_wait([self](const asio::system_error &e) {
                     // NOTE:
                     // windows 20s

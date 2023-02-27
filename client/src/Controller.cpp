@@ -53,7 +53,7 @@ void Controller::readProperties() {
     }
 }
 
-void Controller::init() {
+void Controller::initView() {
     view->GetViewModule()->getClient()->connect();
     view->init(shared_from_this());
     view->loop();

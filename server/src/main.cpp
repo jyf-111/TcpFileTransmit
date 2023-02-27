@@ -63,7 +63,6 @@ class Controller {
         }
     }
     void run() {
-        server->init();
         server->handleAccept();
         server->run();
     }

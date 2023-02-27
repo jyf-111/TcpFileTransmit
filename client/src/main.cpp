@@ -15,7 +15,7 @@ int main(int, char**) {
         auto controller = std::make_shared<Controller>();
         controller->readProperties();
         controller->run();
-        controller->init();
+        controller->initView();
     } catch (std::exception& e) {
         error("{}", e.what());
     }

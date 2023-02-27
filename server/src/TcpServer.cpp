@@ -15,6 +15,12 @@
 
 using namespace spdlog;
 
+TcpServer::TcpServer() {
+    io = std::make_shared<asio::io_context>();
+    fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
+    sig = std::make_shared<asio::signal_set>(*io, SIGINT, SIGTERM);
+}
+
 std::string TcpServer::getIp() const { return ip; }
 
 void TcpServer::setIp(const std::string& ip) { this->ip = ip; }
@@ -85,23 +91,14 @@ void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
             socket_ptr->lowest_layer().close();
         });
 }
-void TcpServer::init() {
-    ssl_context.set_options(asio::ssl::context::default_workarounds |
-                            asio::ssl::context::no_sslv2);
-    ssl_context.set_verify_mode(asio::ssl::verify_peer |
-                                asio::ssl::verify_fail_if_no_peer_cert);
-    ssl_context.set_verify_mode(1);
-    ssl_context.use_certificate_file("server.pem", asio::ssl::context::pem);
-    ssl_context.use_private_key_file("private.key", asio::ssl::context::pem);
-}
 
 void TcpServer::run() {
-    asio::io_context::work work(io);
+    asio::io_context::work work(*io);
     asio::thread_pool threadPool(threads);
     for (std::size_t i = 0; i < threads; ++i) {
         asio::post(threadPool, [self = shared_from_this()] {
             try {
-                self->io.run();
+                self->io->run();
             } catch (asio::system_error& e) {
                 error(e.what());
             }
@@ -115,18 +112,18 @@ void TcpServer::handleSignal(std::weak_ptr<ssl_socket> ptr) {
         return;
     };
     auto socket_ptr = ptr.lock();
-    sig.async_wait([socket_ptr, self = shared_from_this()](
-                       const std::error_code& e, int signal_number) {
+    sig->async_wait([socket_ptr, self = shared_from_this()](
+                        const std::error_code& e, int signal_number) {
         switch (signal_number) {
             case SIGINT:
                 info("SIGINT received, shutting down");
                 self->handleCloseSocket(socket_ptr);
-                self->io.stop();
+                self->io->stop();
                 break;
             case SIGTERM:
                 info("SIGTerm received, shutting down");
                 self->handleCloseSocket(socket_ptr);
-                self->io.stop();
+                self->io->stop();
                 break;
             default:
                 info("default {}", e.message());
@@ -150,7 +147,7 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
             return file.GetFileDataSplited(filesplit);
         }
         case ProtoBuf::Method::Post: {
-            fileWriteStrand.post([path, data] {
+            fileWriteStrand->post([path, data] {
                 File file{path.string() + ".sw"};
                 file.SetFileData(data);
             });
@@ -160,7 +157,7 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total);
             } else if (index == total) {
-                fileWriteStrand.post(
+                fileWriteStrand->post(
                     [path] { File::ReNameFile(path.string() + ".sw", path); });
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total) + " OK";
@@ -181,15 +178,22 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
 }
 
 void TcpServer::handleAccept() {
-    std::shared_ptr<ssl_socket> socketPtr =
-        std::make_shared<ssl_socket>(io, ssl_context);
+    asio::ssl::context ssl_context{asio::ssl::context::tls};
+    ssl_context.set_options(asio::ssl::context::default_workarounds |
+                            asio::ssl::context::no_sslv2);
+    ssl_context.set_verify_mode(asio::ssl::verify_peer |
+                                asio::ssl::verify_fail_if_no_peer_cert);
+    ssl_context.set_verify_mode(1);
+    ssl_context.use_certificate_file("server.pem", asio::ssl::context::pem);
+    ssl_context.use_private_key_file("private.key", asio::ssl::context::pem);
+    auto socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
 
     handleSignal(socketPtr);
     std::shared_ptr<WriteSession> writeSession =
         std::make_shared<WriteSession>(socketPtr);
 
     acceptor = std::make_unique<asio::ip::tcp::acceptor>(
-        io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
+        *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
 
     info("waiting connection");
     acceptor->async_accept(
