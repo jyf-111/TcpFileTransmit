@@ -1,11 +1,13 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
+#include <vcruntime.h>
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 #include <filesystem>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "WriteSession.h"
@@ -21,7 +23,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::size_t filesplit = 65536 * 3;
 
     std::string result;
-    std::vector<std::string> dirList;
+    std::vector<std::pair<std::string, std::size_t>> dirList;
     std::filesystem::path selectPath = ".";
     std::string savePath = ".";
     bool connectFlag = false;
@@ -53,13 +55,15 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setFilesplit(const std::size_t &);
     void setResult(const std::string &);
     std::string getResult();
-    void setDirList(const std::vector<std::string> &dir);
-    const std::vector<std::string> &getDirList();
+    void setDirList(
+        const std::vector<std::pair<std::string, std::size_t>> &dir);
+    const std::vector<std::pair<std::string, std::size_t>> &getDirList();
     void setSavePath(const std::string &savePath);
     const std::string getSavePath();
 
     void handleQuery(const std::filesystem::path &);
-    void handleGet(const std::filesystem::path &,const std::filesystem::path&);
+    void handleGet(const std::filesystem::path &,
+                   const std::filesystem::path &);
     void handlePost(const std::filesystem::path &,
                     const std::vector<std::vector<char>> &);
     void handleDelete(const std::filesystem::path &);

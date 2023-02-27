@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -57,11 +58,15 @@ void app::TcpClient::setResult(const std::string &result) {
 
 std::string app::TcpClient::getResult() { return result; }
 
-void app::TcpClient::setDirList(const std::vector<std::string> &dir) {
+void app::TcpClient::setDirList(
+    const std::vector<std::pair<std::string, std::size_t>> &dir) {
     this->dirList = std::move(dir);
 }
 
-const std::vector<std::string> &app::TcpClient::getDirList() { return dirList; }
+const std::vector<std::pair<std::string, std::size_t>>
+    &app::TcpClient::getDirList() {
+    return dirList;
+}
 
 void app::TcpClient::setSavePath(const std::string &savePath) {
     this->savePath = savePath;
@@ -74,7 +79,11 @@ void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
     std::string item;
     int i = 0;
     while (std::getline(ss, item, '\n')) {
-        this->dirList.push_back(item);
+        std::stringstream ss{item};
+        std::string filename;
+        std::size_t filesize;
+        ss >> filename >> filesize;
+        this->dirList.emplace_back(filename, filesize);
     };
 }
 

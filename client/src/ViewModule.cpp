@@ -4,7 +4,6 @@
 #include <spdlog/spdlog.h>
 
 #include <string>
-#include <string_view>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
@@ -61,21 +60,38 @@ void app::ViewModule::render_query_window(bool &show_window) {
         }
     }
     const auto &res = client->getDirList();
-    for (auto item : res) {
-        if (ImGui::Selectable(item.c_str())) {
-            if (*item.rbegin() == '\\') {
-                // is dir
-                std::memset(std::begin(queryPath), 0, std::strlen(queryPath));
-                std::copy(item.begin(), item.end(), queryPath);
-            } else {
-                // is file
-                std::memset(std::begin(getPath), 0, std::strlen(getPath));
-                std::memset(std::begin(deletePath), 0, std::strlen(deletePath));
-                std::copy(item.begin(), item.end(), getPath);
-                std::copy(item.begin(), item.end(), deletePath);
+
+    if (ImGui::BeginTable("split", 2)) {
+        for (const auto &[filename, filesize] : res) {
+            ImGui::TableNextColumn();
+            if (ImGui::Selectable(filename.c_str())) {
+                if (*filename.rbegin() == '\\') {
+                    // is dir
+                    std::memset(std::begin(queryPath), 0,
+                                std::strlen(queryPath));
+                    std::copy(filename.begin(), filename.end(), queryPath);
+                } else {
+                    // is file
+                    std::memset(std::begin(getPath), 0, std::strlen(getPath));
+                    std::memset(std::begin(deletePath), 0,
+                                std::strlen(deletePath));
+                    std::copy(filename.begin(), filename.end(), getPath);
+                    std::copy(filename.begin(), filename.end(), deletePath);
+                }
             }
+
+            ImGui::TableNextColumn();
+
+            auto posX =
+                (ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+                 ImGui::CalcTextSize(std::to_string(filesize).c_str()).x -
+                 ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+            if (posX > ImGui::GetCursorPosX()) ImGui::SetCursorPosX(posX);
+            ImGui::Text("%llu", filesize);
         }
+        ImGui::EndTable();
     }
+
     ImGui::End();
     client->handleQuery(queryPath);
 }
@@ -220,7 +236,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                              ImGuiConfigFlags_NavEnableGamepad);
         ImGui::SameLine();
         HelpMarker(
-            "Enable gamepad controls. Require backend to set io.BackendFlags "
+            "Enable gamepad controls. Require backend to set "
+            "io.BackendFlags "
             "|= ImGuiBackendFlags_HasGamepad.\n\nRead instructions in "
             "imgui.cpp for details.");
         ImGui::CheckboxFlags("io.ConfigFlags: NavEnableSetMousePos",
@@ -247,22 +264,28 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                              ImGuiConfigFlags_NoMouseCursorChange);
         ImGui::SameLine();
         HelpMarker(
-            "Instruct backend to not alter mouse cursor shape and visibility.");
+            "Instruct backend to not alter mouse cursor shape and "
+            "visibility.");
         ImGui::Checkbox("io.ConfigInputTrickleEventQueue",
                         &io.ConfigInputTrickleEventQueue);
         ImGui::SameLine();
         HelpMarker(
             "Enable input queue trickling: some types of events submitted "
-            "during the same frame (e.g. button down + up) will be spread over "
+            "during the same frame (e.g. button down + up) will be spread "
+            "over "
             "multiple frames, improving interactions with low framerates.");
         ImGui::Checkbox("io.MouseDrawCursor", &io.MouseDrawCursor);
         ImGui::SameLine();
         HelpMarker(
-            "Instruct Dear ImGui to render a mouse cursor itself. Note that a "
+            "Instruct Dear ImGui to render a mouse cursor itself. Note "
+            "that a "
             "mouse cursor rendered via your application GPU rendering path "
-            "will feel more laggy than hardware cursor, but will be more in "
-            "sync with your other visuals.\n\nSome desktop applications may "
-            "use both kinds of cursors (e.g. enable software cursor only when "
+            "will feel more laggy than hardware cursor, but will be more "
+            "in "
+            "sync with your other visuals.\n\nSome desktop applications "
+            "may "
+            "use both kinds of cursors (e.g. enable software cursor only "
+            "when "
             "resizing/dragging something).");
 
         ImGui::Text("Widgets");
@@ -270,7 +293,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                         &io.ConfigInputTextCursorBlink);
         ImGui::SameLine();
         HelpMarker(
-            "Enable blinking cursor (optional as some users consider it to be "
+            "Enable blinking cursor (optional as some users consider it to "
+            "be "
             "distracting).");
         ImGui::Checkbox("io.ConfigInputTextEnterKeepActive",
                         &io.ConfigInputTextEnterKeepActive);
@@ -290,7 +314,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
         HelpMarker(
             "Enable resizing of windows from their edges and from the "
             "lower-left corner.\nThis requires (io.BackendFlags & "
-            "ImGuiBackendFlags_HasMouseCursors) because it needs mouse cursor "
+            "ImGuiBackendFlags_HasMouseCursors) because it needs mouse "
+            "cursor "
             "feedback.");
         ImGui::Checkbox("io.ConfigWindowsMoveFromTitleBarOnly",
                         &io.ConfigWindowsMoveFromTitleBarOnly);
@@ -309,8 +334,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
             "interactions with your backend.");
 
         // Make a local copy to avoid modifying actual backend flags.
-        // FIXME: We don't use BeginDisabled() to keep label bright, maybe we
-        // need a BeginReadonly() equivalent..
+        // FIXME: We don't use BeginDisabled() to keep label bright, maybe
+        // we need a BeginReadonly() equivalent..
         ImGuiBackendFlags backend_flags = io.BackendFlags;
         ImGui::CheckboxFlags("io.BackendFlags: HasGamepad", &backend_flags,
                              ImGuiBackendFlags_HasGamepad);
@@ -328,7 +353,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
     // IMGUI_DEMO_MARKER("Configuration/Style");
     if (ImGui::TreeNode("Style")) {
         HelpMarker(
-            "The same contents can be accessed in 'Tools->Style Editor' or by "
+            "The same contents can be accessed in 'Tools->Style Editor' or "
+            "by "
             "calling the ShowStyleEditor() function.");
 
         ImGui::ShowStyleEditor();
@@ -341,13 +367,15 @@ void app::ViewModule::render_setting_window(bool &show_window) {
         HelpMarker(
             "The logging API redirects all text output so you can easily "
             "capture the content of "
-            "a window or a block. Tree nodes can be automatically expanded.\n"
+            "a window or a block. Tree nodes can be automatically "
+            "expanded.\n"
             "Try opening any of the contents below in this window and then "
             "click one of the \"Log To\" button.");
         ImGui::LogButtons();
 
         HelpMarker(
-            "You can also call ImGui::LogText() to output directly to the log "
+            "You can also call ImGui::LogText() to output directly to the "
+            "log "
             "without a visual output.");
         if (ImGui::Button("Copy \"Hello, world!\" to clipboard")) {
             ImGui::LogToClipboard();
