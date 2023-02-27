@@ -36,10 +36,7 @@ void app::ViewModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
     std::string res = client->getResult();
-    char *s = const_cast<char *>(res.c_str());
-    ImGui::InputTextMultiline("##result", s, res.size(),
-                              ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 20),
-                              ImGuiInputTextFlags_ReadOnly);
+    ImGui::Text("%s", res.c_str());
     ImGui::End();
 }
 
@@ -48,7 +45,7 @@ void app::ViewModule::render_query_window(bool &show_window) {
 
     ImGui::BulletText("path:");
     ImGui::SameLine();
-    ImGui::InputTextWithHint("", "file path", queryPath,
+    ImGui::InputTextWithHint("##file path", "file path", queryPath,
                              IM_ARRAYSIZE(queryPath));
     if (ImGui::Button("<back")) {
         std::string_view s{std::begin(queryPath),
@@ -97,12 +94,12 @@ void app::ViewModule::render_query_window(bool &show_window) {
 }
 
 void app::ViewModule::render_get_window(bool &show_window) {
-    ImGui::Begin("Tcp File get", &show_window, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Tcp File get", &show_window);
 
     ImGui::Text("get file");
 
     ImGui::BulletText("Enter the place to save file:");
-    ImGui::InputText("save path", savePath, IM_ARRAYSIZE(savePath));
+    ImGui::InputText("##save path", savePath, IM_ARRAYSIZE(savePath));
     ImGui::SameLine();
     if (ImGui::Button("open explorer")) {
         ImGuiFileDialog::Instance()->OpenDialog(
@@ -127,7 +124,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
     }
 
     ImGui::BulletText("Enter the file path to get on server:");
-    ImGui::InputTextWithHint(" get file", "file path", getPath,
+    ImGui::InputTextWithHint("##get file", "file path", getPath,
                              IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
@@ -138,7 +135,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
 }
 
 void app::ViewModule::render_add_file_window(bool &show_window) {
-    ImGui::Begin("Tcp File Transmit", &show_window, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Tcp File Transmit", &show_window);
 
     ImGui::Text("transmit file");
     ImGui::BulletText("Enter the file path to transmit:");
@@ -174,7 +171,8 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     }
 
     ImGui::BulletText("path to save on server");
-    ImGui::InputTextWithHint("", "path to save on server", sendToPath,
+    ImGui::InputTextWithHint("##path to save on server",
+                             "path to save on server", sendToPath,
                              IM_ARRAYSIZE(sendToPath));
 
     ImGui::SameLine();
@@ -200,12 +198,12 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
 }
 
 void app::ViewModule::render_delete_file_window(bool &show_window) {
-    ImGui::Begin("Tcp File delete", &show_window, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Tcp File delete", &show_window);
 
     ImGui::Text("delete file");
     ImGui::BulletText("Enter the file path to delete:");
 
-    ImGui::InputTextWithHint("", "file path", deletePath,
+    ImGui::InputTextWithHint("##file path", "file path", deletePath,
                              IM_ARRAYSIZE(deletePath));
 
     ImGui::SameLine();
