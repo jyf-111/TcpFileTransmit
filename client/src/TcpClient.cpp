@@ -12,9 +12,8 @@
 #include "Properties.h"
 #include "ProtoBuf.h"
 
-using namespace spdlog;
-
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
+    logger = spdlog::get("logger");
     fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
     timer = std::make_unique<asio::steady_timer>(*io, std::chrono::seconds(3));
     resolver = std::make_unique<asio::ip::tcp::resolver>(*io);
@@ -36,7 +35,7 @@ void app::TcpClient::setDomain(const std::string &domain) {
             auto iter = resolver->resolve(domain, std::to_string(port));
             setIp(iter->endpoint().address().to_string());
         } catch (const asio::error_code &e) {
-            error("{}", e.message());
+            logger->error("{}", e.message());
         }
     }
 }
@@ -111,10 +110,10 @@ void app::TcpClient::handleRead() {
 
     asio::async_read(
         *socketPtr, *streambuf,
-        [peek, streambuf](const asio::system_error &e,
-                          std::size_t size) -> std::size_t {
+        [peek, streambuf, self = shared_from_this()](
+            const asio::system_error &e, std::size_t size) -> std::size_t {
             if (e.code()) {
-                error("async_reading: {}", e.what());
+                self->logger->error("async_reading: {}", e.what());
                 return 0;
             }
             if (size == sizeof(std::size_t)) {
@@ -132,11 +131,11 @@ void app::TcpClient::handleRead() {
                                                std::size_t size) {
             if (e) {
                 self->disconnect();
-                error("async_read: {}", e.message());
+                self->logger->error("async_read: {}", e.message());
                 self->connect();
                 return;
             }
-            debug("read complete");
+            self->logger->debug("read complete");
 
             self->handleRead();
 
@@ -186,7 +185,7 @@ void app::TcpClient::handleRead() {
                     }
                 }
             } else {
-                error("recv protobuf`s method is not post");
+                self->logger->error("recv protobuf`s method is not post");
             }
         });
 }
@@ -195,7 +194,7 @@ void app::TcpClient::registerQuery() {
     if (connectFlag == false) return;
     timer->async_wait([self = shared_from_this()](const asio::error_code &e) {
         if (e) {
-            error("{}", e.message());
+            self->logger->error("{}", e.message());
             return;
         }
         self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
@@ -216,7 +215,7 @@ void app::TcpClient::handleGet(const std::filesystem::path &path,
     const auto tmpFile =
         savepath.string() + "/" + path.filename().string() + ".sw";
     if (File::FileIsExist(tmpFile)) {
-        info("swap file is exist: {}", tmpFile);
+        logger->info("swap file is exist: {}", tmpFile);
         protoBuf.SetIndex(File::GetFileSize(tmpFile));
     }
     session->enqueue(protoBuf);
@@ -239,7 +238,7 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    info("connectting");
+    logger->info("connectting");
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<WriteSession>(socketPtr, io);
 
@@ -257,15 +256,15 @@ void app::TcpClient::connect() {
                 });
                 return;
             }
-            info("connect {}:{} success ", self->ip, self->port);
+            self->logger->info("connect {}:{} success ", self->ip, self->port);
             self->socketPtr->async_handshake(
                 asio::ssl::stream_base::client,
                 [self](const asio::system_error &e) {
                     if (e.code()) {
-                        error("handshake failed: {}", e.what());
+                        self->logger->error("handshake failed: {}", e.what());
                         return;
                     }
-                    info("handshake success");
+                    self->logger->info("handshake success");
                     self->connectFlag = true;
                     self->session->doWrite();
                     self->handleRead();
@@ -280,14 +279,14 @@ void app::TcpClient::disconnect() {
         socketPtr->async_shutdown(
             [self = shared_from_this()](const asio::system_error &e) {
                 if (e.code()) {
-                    error("shutdown failed: {}", e.what());
+                    self->logger->error("shutdown failed: {}", e.what());
                     return;
                 }
-                info("shutdown success");
+                self->logger->info("shutdown success");
                 self->socketPtr->next_layer().close();
             });
     } else {
-        info("client is disconnect");
+        logger->info("client is disconnect");
     }
 }
 

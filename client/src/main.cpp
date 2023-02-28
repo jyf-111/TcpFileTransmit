@@ -3,7 +3,6 @@
 #include "Controller.h"
 
 int main(int, char**) {
-
 #ifdef _WIN32
     HWND hwnd = GetForegroundWindow();
     if (hwnd) {
@@ -15,9 +14,9 @@ int main(int, char**) {
         auto controller = std::make_shared<Controller>();
         controller->readProperties();
         controller->run();
-        controller->initView();
+        controller->init();
     } catch (std::exception& e) {
-        error("{}", e.what());
+        spdlog::get("logger")->error("{}", e.what());
     }
     return 0;
 }

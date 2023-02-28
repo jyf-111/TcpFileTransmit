@@ -13,9 +13,8 @@
 #include "ProtoBuf.h"
 #include "WriteSession.h"
 
-using namespace spdlog;
-
 TcpServer::TcpServer() {
+    logger = spdlog::get("logger");
     io = std::make_shared<asio::io_context>();
     fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
     sig = std::make_shared<asio::signal_set>(*io, SIGINT, SIGTERM);
@@ -97,17 +96,17 @@ void TcpServer::handleSignal(std::weak_ptr<ssl_socket> ptr) {
                         const std::error_code& e, int signal_number) {
         switch (signal_number) {
             case SIGINT:
-                info("SIGINT received, shutting down");
+                self->logger->info("SIGINT received, shutting down");
                 self->handleCloseSocket(socket_ptr);
                 self->io->stop();
                 break;
             case SIGTERM:
-                info("SIGTerm received, shutting down");
+                self->logger->info("SIGTerm received, shutting down");
                 self->handleCloseSocket(socket_ptr);
                 self->io->stop();
                 break;
             default:
-                info("default {}", e.message());
+                self->logger->info("default {}", e.message());
         }
     });
 }
@@ -172,16 +171,16 @@ void TcpServer::handleAccept() {
     auto socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     auto writeSession = std::make_shared<WriteSession>(socketPtr, io);
 
+    logger->info("waiting connection");
     handleSignal(socketPtr);
 
     acceptor = std::make_unique<asio::ip::tcp::acceptor>(
         *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
 
-    info("waiting connection");
     acceptor->async_accept(
         socketPtr->lowest_layer(), [self = shared_from_this(), socketPtr,
                                     writeSession](const asio::error_code& e) {
-            info("connection accepted");
+            self->logger->info("connection accepted");
             self->handleAccept();
             if (e) {
                 error("async_accept: " + e.message());
@@ -189,7 +188,7 @@ void TcpServer::handleAccept() {
                 socketPtr->async_handshake(
                     asio::ssl::stream_base::server,
                     [self, socketPtr, writeSession](const asio::error_code& e) {
-                        info("handshake success");
+                        self->logger->info("handshake success");
                         writeSession->doWrite();
                         self->handleRead(socketPtr, writeSession);
                     });
@@ -199,7 +198,7 @@ void TcpServer::handleAccept() {
 
 void TcpServer::handleRead(std::shared_ptr<ssl_socket> socketPtr,
                            std::shared_ptr<WriteSession> writeSession) {
-    debug("new read");
+    logger->debug("new read");
     auto streambuf = std::make_shared<asio::streambuf>();
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
@@ -230,7 +229,7 @@ void TcpServer::handleRead(std::shared_ptr<ssl_socket> socketPtr,
                 return;
             }
 
-            debug("read complete");
+            self->logger->debug("read complete");
             self->handleRead(socketPtr, writeSession);
 
             std::variant<std::string, std::vector<std::vector<char>>> result;

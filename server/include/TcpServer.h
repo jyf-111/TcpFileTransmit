@@ -12,6 +12,8 @@
 #include "WriteSession.h"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
+    std::shared_ptr<spdlog::logger> logger;
+
     std::string ip = "127.0.0.1";
     std::size_t port = 8000;
     std::size_t filesplit = 65536 * 4;

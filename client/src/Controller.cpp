@@ -4,28 +4,12 @@
 #include <thread>
 
 Controller::Controller() {
+    loggerRegister = std::make_shared<LoggerRegister>();
+    logger = spdlog::get("logger");
     io = std::make_shared<asio::io_context>();
     client = std::make_shared<app::TcpClient>(io);
     viewModule = std::make_shared<app::ViewModule>(client);
     view = std::make_shared<app::view>(std::move(viewModule));
-}
-
-void Controller::setLevel(const std::string& level) {
-    if (level == "debug") {
-        set_level(spdlog::level::debug);
-    } else if (level == "info") {
-        set_level(spdlog::level::info);
-    } else if (level == "warn") {
-        set_level(spdlog::level::warn);
-    } else if (level == "err") {
-        set_level(spdlog::level::err);
-    } else if (level == "critical") {
-        set_level(spdlog::level::critical);
-    } else if (level == "off") {
-        set_level(spdlog::level::off);
-    } else {
-        set_level(spdlog::level::info);
-    }
 }
 
 void Controller::readProperties() {
@@ -37,8 +21,9 @@ void Controller::readProperties() {
         client->setPort(value["port"].asLargestUInt());
         client->setDomain(value["domain"].asString());
         client->setFilesplit(value["filesplit"].asLargestUInt());
-
-        setLevel(value["log"].asString());
+        loggerRegister->setLevel(level = value["log"].asString());
+        logger->info("ip: {} port: {} level: {} filesplit: {}", client->getIp(),
+                     client->getPort(), level, client->getFilesplitsize());
 
         std::size_t threads = value["threads"].asLargestUInt();
         if (threads > 1)
@@ -46,14 +31,12 @@ void Controller::readProperties() {
         else
             this->threads = std::thread::hardware_concurrency();
 
-        info("ip: {} port: {} filesplit: {}", client->getIp(),
-             client->getPort(), client->getFilesplitsize());
     } catch (std::exception& e) {
-        warn("{}", e.what());
+        logger->warn("{}", e.what());
     }
 }
 
-void Controller::initView() {
+void Controller::init() {
     view->GetViewModule()->getClient()->connect();
     view->init(shared_from_this());
     view->loop();
@@ -72,5 +55,5 @@ void Controller::run() {
 void Controller::stop() {
     view->GetViewModule()->getClient()->disconnect();
     io->stop();
-    debug("io_context stop");
+    logger->info("io_context stop");
 }

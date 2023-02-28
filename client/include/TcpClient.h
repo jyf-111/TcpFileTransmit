@@ -1,8 +1,6 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
-#include <vcruntime.h>
-
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 #include <filesystem>
@@ -29,6 +27,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     bool connectFlag = false;
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
+    std::shared_ptr<spdlog::logger> logger;
     std::shared_ptr<asio::io_service> io;
     std::unique_ptr<asio::io_context::strand> fileWriteStrand;
     std::unique_ptr<asio::steady_timer> timer;

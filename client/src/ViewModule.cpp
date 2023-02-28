@@ -9,8 +9,6 @@
 #include "ImGuiFileDialog.h"
 #include "TcpClient.h"
 
-using namespace spdlog;
-
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a
 // merged icon fonts (see docs/FONTS.md)
@@ -26,7 +24,9 @@ static void HelpMarker(const char *desc) {
 }
 
 app::ViewModule::ViewModule(std::shared_ptr<TcpClient> tcpClient)
-    : client(std::move(tcpClient)) {}
+    : client(std::move(tcpClient)) {
+    logger = spdlog::get("logger");
+}
 
 std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {
     return client;
@@ -117,7 +117,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
             std::memset(savePath, 0, sizeof savePath);
             std::copy(filePath.begin(), filePath.end(), savePath);
             client->setSavePath(savePath);
-            debug("select dir: {}", filePathName);
+            logger->debug("select dir: {}", filePathName);
         }
         // close
         ImGuiFileDialog::Instance()->Close();
@@ -128,7 +128,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
                              IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
     if (ImGui::Button("get")) {
-        info("get file: {}", getPath);
+        logger->info("get file: {}", getPath);
         client->handleGet(getPath, savePath);
     }
     ImGui::End();
@@ -157,7 +157,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
             std::string filePath =
                 ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
-            debug("add file: {}", filePathName);
+            logger->debug("add file: {}", filePathName);
             std::memset(selectPath, 0, sizeof selectPath);
             std::copy(filePathName.begin(), filePathName.end(), selectPath);
             // get file name
@@ -190,7 +190,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
 
             client->handlePost(sendToPath, splitedData);
         } catch (std::exception &e) {
-            error("{}", e.what());
+            spdlog::get("logger")->error("{}", e.what());
         }
     }
 
@@ -208,7 +208,7 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
 
     ImGui::SameLine();
     if (ImGui::Button("delete")) {
-        info("delete file: {}", deletePath);
+        logger->info("delete file: {}", deletePath);
         try {
             client->handleDelete(deletePath);
         } catch (std::exception &e) {

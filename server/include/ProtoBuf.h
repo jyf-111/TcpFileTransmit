@@ -189,7 +189,7 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
     os << ProtoBuf::MethodToString(protoBuf.method) + " " +
               protoBuf.path.string() + " ";
 
-    debug("send {}", protoBuf.toString());
+    spdlog::get("logger")->debug("send {}", protoBuf.toString());
     const auto &data = protoBuf.GetData();
     os.write(data.data(), data.size());
     return os;
@@ -224,7 +224,7 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);
-    debug("recv {}", protoBuf.toString());
+    spdlog::get("logger")->debug("recv {}", protoBuf.toString());
     return is;
 }
 

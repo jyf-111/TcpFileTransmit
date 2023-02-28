@@ -1,7 +1,5 @@
 #include "view.h"
 
-#include <spdlog/spdlog.h>
-
 #include <memory>
 
 #include "Controller.h"
@@ -142,8 +140,6 @@ void app::view::loop() {
             auto ctl = controller.lock();
             if (ctl != nullptr) {
                 ctl->stop();
-            } else {
-                warn("ctl is nullptr");
             }
             break;
         }
