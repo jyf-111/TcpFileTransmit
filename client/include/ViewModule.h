@@ -9,12 +9,12 @@ namespace app {
 #define BUF_SIZE 1024
 
 class ViewModule {
-    char getPath[BUF_SIZE];
+    char getPath[BUF_SIZE] = {};
     char savePath[BUF_SIZE] = {'.'};
     char queryPath[BUF_SIZE] = {'.'};
-    char selectPath[BUF_SIZE];
-    char sendToPath[BUF_SIZE];
-    char deletePath[BUF_SIZE];
+    char selectPath[BUF_SIZE] = {};
+    char sendToPath[BUF_SIZE] = {};
+    char deletePath[BUF_SIZE] = {};
 
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 

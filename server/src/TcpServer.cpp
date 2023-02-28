@@ -166,8 +166,8 @@ void TcpServer::handleAccept() {
     ssl_context.set_verify_mode(asio::ssl::verify_peer |
                                 asio::ssl::verify_fail_if_no_peer_cert);
     ssl_context.set_verify_mode(1);
-    ssl_context.use_certificate_file("server.pem", asio::ssl::context::pem);
-    ssl_context.use_private_key_file("private.key", asio::ssl::context::pem);
+    ssl_context.use_certificate_file(certificate, asio::ssl::context::pem);
+    ssl_context.use_private_key_file(private_key, asio::ssl::context::pem);
 
     auto socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     auto writeSession = std::make_shared<WriteSession>(socketPtr, io);

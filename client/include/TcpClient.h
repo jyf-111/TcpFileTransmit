@@ -30,11 +30,11 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_service> io;
-    std::shared_ptr<asio::io_context::strand> fileWriteStrand;
-    std::shared_ptr<asio::steady_timer> timer;
+    std::unique_ptr<asio::io_context::strand> fileWriteStrand;
+    std::unique_ptr<asio::steady_timer> timer;
+    std::unique_ptr<asio::ip::tcp::resolver> resolver;
     std::shared_ptr<ssl_socket> socketPtr;
     std::shared_ptr<WriteSession> session;
-    std::shared_ptr<asio::ip::tcp::resolver> resolver;
     asio::ssl::context ssl_context{asio::ssl::context::tls};
 
     void ConvertDirStringToList(const std::string &);

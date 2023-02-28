@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
 #include <filesystem>
-#include <utility>
 #include <vector>
 
 class File {
@@ -30,7 +29,7 @@ class File {
 
     void SetFilePath(const std::filesystem::path &);
 
-    [[nodiscard]] std::string QueryDirectory() const;
+    [[nodiscard]]const std::string QueryDirectory() const;
 
     void DeleteActualFile() const;
 

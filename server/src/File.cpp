@@ -41,7 +41,7 @@ void File::ReNameFile(const std::filesystem::path &from,
     std::filesystem::rename(from, to);
 }
 
-std::string File::QueryDirectory() const {
+const std::string File::QueryDirectory() const {
     if (path.empty() || !std::filesystem::exists(path)) {
         throw std::runtime_error("path is empty or is not exist");
     }

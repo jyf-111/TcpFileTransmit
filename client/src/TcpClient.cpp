@@ -15,10 +15,9 @@
 using namespace spdlog;
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
-    fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
-    timer = std::make_shared<asio::steady_timer>(*io, std::chrono::seconds(3));
-    session = std::make_shared<WriteSession>(socketPtr, io);
-    resolver = std::make_shared<asio::ip::tcp::resolver>(*io);
+    fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
+    timer = std::make_unique<asio::steady_timer>(*io, std::chrono::seconds(3));
+    resolver = std::make_unique<asio::ip::tcp::resolver>(*io);
 }
 
 std::shared_ptr<asio::io_context> app::TcpClient::getIoContext() { return io; }

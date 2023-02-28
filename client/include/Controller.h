@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "Properties.h"
 #include "TcpClient.h"
 #include "ViewModule.h"

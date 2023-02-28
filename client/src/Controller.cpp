@@ -1,12 +1,13 @@
 #include "Controller.h"
 
+#include <memory>
 #include <thread>
 
 Controller::Controller() {
     io = std::make_shared<asio::io_context>();
     client = std::make_shared<app::TcpClient>(io);
     viewModule = std::make_shared<app::ViewModule>(client);
-    view = std::make_shared<app::view>(viewModule);
+    view = std::make_shared<app::view>(std::move(viewModule));
 }
 
 void Controller::setLevel(const std::string& level) {
@@ -37,7 +38,6 @@ void Controller::readProperties() {
         client->setDomain(value["domain"].asString());
         client->setFilesplit(value["filesplit"].asLargestUInt());
 
-        
         setLevel(value["log"].asString());
 
         std::size_t threads = value["threads"].asLargestUInt();

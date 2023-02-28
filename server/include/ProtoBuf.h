@@ -12,14 +12,8 @@
 
 using namespace spdlog;
 
-/**
- * @brief Class for ProtoBuf
- */
 class ProtoBuf {
    public:
-    /**
-     * @brief Method enum
-     */
     enum class [[nodiscard]] Method {
         Query,
         Get,
@@ -34,126 +28,50 @@ class ProtoBuf {
     ProtoBuf &operator=(const ProtoBuf &) = default;
     ProtoBuf &operator=(ProtoBuf &&) = default;
 
-    /**
-     * @brief Method toString
-     * @param Method
-     */
     static std::string MethodToString(const Method &);
 
-    /**
-     * @brief String to Method
-     * @param std::string
-     */
     static Method StringToMethod(std::string &);
 
-    /**
-     * @brief Method for get whole size
-     */
     [[nodiscard]] const std::size_t &GetSize() const;
 
-    /**
-     * @brief Method for set whole size
-     */
     void SetSize(const std::size_t &);
 
-    /**
-     * @brief Method for get whole size
-     */
     [[nodiscard]] const std::size_t &GetHeadSize() const;
 
-    /**
-     * @brief Method for set whole size
-     */
     void SetHeadSize(const std::size_t &);
 
-    /**
-     * @brief Method for get isDIr
-     * @return const bool&
-     */
     [[nodiscard]] const bool &GetIsDir() const;
 
-    /**
-     * @brief Method for set isFile
-     */
     void SetIsDir(const bool &);
 
-    /**
-     * @brief Method for get isFile
-     * @return const bool&
-     */
     [[nodiscard]] const bool &GetIsFile() const;
 
-    /**
-     * @brief Method for set isFile
-     */
     void SetIsFile(const bool &);
 
-    /**
-     * @brief Method for get index
-     * @return const std::size_t
-     */
     [[nodiscard]] const std::size_t &GetIndex() const;
 
-    /**
-     * @brief Method for set index
-     */
     void SetIndex(const std::size_t &);
 
-    /**
-     * @brief Method for get total
-     * @return const std::size_t
-     */
     [[nodiscard]] const std::size_t &GetTotal() const;
 
-    /**
-     * @brief Method for set total
-     */
     inline void SetTotal(const std::size_t &total);
-    /**
-     * @brief Method for get method
-     * @return Method
-     */
+
     [[nodiscard]] Method GetMethod() const;
-    /*
-     * @brief Method for set method
-     */
+
     void SetMethod(Method);
 
-    /**
-     * @brief Method for get path
-     * @return std::filesystem::path
-     */
     [[nodiscard]] std::filesystem::path GetPath() const;
 
-    /*
-     * @brief Method for set Path
-     */
     void SetPath(std::filesystem::path);
 
-    /**
-     * @brief Method for get data
-     * @return std::string
-     */
     [[nodiscard]] const std::vector<char> &GetData() const;
 
-    /**
-     * @brief Method for set data
-     */
     void SetData(const std::vector<char> &);
 
-    /**
-     * @brief print protoBuf with ostream
-     */
     friend std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf);
 
-    /**
-     * @brief print protoBuf with istream
-     */
     friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
 
-    /**
-     * @brief Method for get item as a string
-     */
     [[nodiscard]] const std::string toString() const;
 
    private:

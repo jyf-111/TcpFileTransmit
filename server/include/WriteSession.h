@@ -23,8 +23,8 @@ class WriteSession : public std::enable_shared_from_this<WriteSession> {
    public:
     WriteSession(std::shared_ptr<ssl_socket> socketPtr,
                  std::shared_ptr<asio::io_context> io)
-        : timer(std::make_shared<asio::steady_timer>(*io,
-                                                     std::chrono::seconds(3))),
+        : timer(std::make_shared<asio::steady_timer>(
+              *io, std::chrono::milliseconds(500))),
           socketPtr(std::move(socketPtr)) {}
 
     void enqueue(const ProtoBuf& buf) {
