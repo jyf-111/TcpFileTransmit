@@ -52,8 +52,8 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setPort(const std::size_t &);
     [[nodiscard]] std::size_t getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
+    const std::string getResult();
     void setResult(const std::string &);
-    std::string getResult();
     void setDirList(
         const std::vector<std::pair<std::string, std::size_t>> &dir);
     const std::vector<std::pair<std::string, std::size_t>> &getDirList();

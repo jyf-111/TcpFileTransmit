@@ -1,12 +1,14 @@
 #include "ViewModule.h"
 
 #include <imgui.h>
+#include <json/json.h>
 #include <spdlog/spdlog.h>
 
 #include <string>
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
+#include "Properties.h"
 #include "TcpClient.h"
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
@@ -30,6 +32,22 @@ app::ViewModule::ViewModule(std::shared_ptr<TcpClient> tcpClient)
 
 std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {
     return client;
+}
+
+void app::ViewModule::init() {
+    const Json::Value &value = Properties::readProperties("config.json");
+    const std::string &domain = value["domain"].asString();
+    const std::string &ip = value["ip"].asString();
+    const int port = value["port"].asInt();
+    const std::string &level = value["level"].asString();
+    const int filesplit = value["filesplit"].asInt();
+    const int threads = value["threads"].asInt();
+    std::copy(domain.begin(), domain.end(), std::begin(this->domain));
+    std::copy(ip.begin(), ip.end(), std::begin(this->ip));
+    std::copy(level.begin(), level.end(), std::begin(this->level));
+    this->port = port;
+    this->filesplit = filesplit;
+    this->threads = threads;
 }
 
 void app::ViewModule::render_resultUI(bool &show_window) {
@@ -90,7 +108,12 @@ void app::ViewModule::render_query_window(bool &show_window) {
     }
 
     ImGui::End();
-    client->handleQuery(queryPath);
+    try {
+        client->handleQuery(queryPath);
+    } catch (std::exception &e) {
+        spdlog::get("logger")->error("{}", e.what());
+        client->setResult(e.what());
+    }
 }
 
 void app::ViewModule::render_get_window(bool &show_window) {
@@ -129,7 +152,12 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::SameLine();
     if (ImGui::Button("get")) {
         logger->info("get file: {}", getPath);
-        client->handleGet(getPath, savePath);
+        try {
+            client->handleGet(getPath, savePath);
+        } catch (const std::exception &e) {
+            spdlog::get("logger")->error("{}", e.what());
+            client->setResult(e.what());
+        }
     }
     ImGui::End();
 }
@@ -191,6 +219,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
             client->handlePost(sendToPath, splitedData);
         } catch (std::exception &e) {
             spdlog::get("logger")->error("{}", e.what());
+            client->setResult(e.what());
         }
     }
 
@@ -212,7 +241,8 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
         try {
             client->handleDelete(deletePath);
         } catch (std::exception &e) {
-            error("{}", e.what());
+            spdlog::get("logger")->error("{}", e.what());
+            client->setResult(e.what());
         }
     }
 
@@ -228,6 +258,39 @@ void app::ViewModule::render_setting_window(bool &show_window) {
     ImGui::Separator();
 
     ImGuiIO &io = ImGui::GetIO();
+
+    if (ImGui::TreeNode("config.json")) {
+        ImGui::InputTextWithHint("domain", "domain", domain,
+                                 IM_ARRAYSIZE(domain));
+
+        ImGui::InputTextWithHint("ip", "ip", ip, IM_ARRAYSIZE(ip));
+
+        ImGui::InputInt("port", &port);
+
+        ImGui::InputTextWithHint("level", "level", level, IM_ARRAYSIZE(level));
+
+        ImGui::InputInt("filesplit", &filesplit);
+
+        ImGui::InputInt("threads", &threads);
+
+        if (ImGui::Button("save")) {
+            try {
+                Json::Value value;
+                value["domain"] = domain;
+                value["ip"] = ip;
+                value["port"] = port;
+                value["level"] = level;
+                value["filesplit"] = filesplit;
+                value["threads"] = threads;
+                Properties::writeProperties("config.json", value);
+                spdlog::get("logger")->info("config save success");
+                client->setResult("config save success");
+            } catch (std::exception &e) {
+                spdlog::get("logger")->error("config save error:{}", e.what());
+                client->setResult("config save error");
+            }
+        }
+    }
 
     if (ImGui::TreeNode("Configuration##2")) {
         ImGui::Text("General");

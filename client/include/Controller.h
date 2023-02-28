@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "LoggerRegister.h"
-#include "Properties.h"
 #include "TcpClient.h"
 #include "ViewModule.h"
 #include "view.h"

@@ -3,6 +3,8 @@
 #include <memory>
 #include <thread>
 
+#include "Properties.h"
+
 Controller::Controller() {
     loggerRegister = std::make_shared<LoggerRegister>();
     logger = spdlog::get("logger");
@@ -14,8 +16,7 @@ Controller::Controller() {
 
 void Controller::readProperties() {
     try {
-        Properties properties;
-        auto value = properties.readProperties();
+        const auto& value = Properties::readProperties("config.json");
         auto client = view->GetViewModule()->getClient();
         client->setIp(value["ip"].asString());
         client->setPort(value["port"].asLargestUInt());

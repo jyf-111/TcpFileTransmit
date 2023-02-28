@@ -3,7 +3,6 @@
 #include <asio.hpp>
 
 #include "File.h"
-#include "Properties.h"
 #include "ProtoBuf.h"
 
 TEST(FileTest, test) {

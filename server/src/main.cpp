@@ -20,8 +20,7 @@ class Controller {
     }
     void readProperties() {
         try {
-            Properties properties;
-            auto value = properties.readProperties();
+            const auto value = Properties::readProperties("config.json");
             if (value["ip"].isNull()) {
                 logger->error("ip is null");
             } else {

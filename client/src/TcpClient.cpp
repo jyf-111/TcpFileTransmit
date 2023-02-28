@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "File.h"
-#include "Properties.h"
 #include "ProtoBuf.h"
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
@@ -54,7 +53,7 @@ void app::TcpClient::setResult(const std::string &result) {
     this->result = result;
 }
 
-std::string app::TcpClient::getResult() { return handleOutPutTime(result); }
+const std::string app::TcpClient::getResult() { return handleOutPutTime(result); }
 
 void app::TcpClient::setDirList(
     const std::vector<std::pair<std::string, std::size_t>> &dir) {

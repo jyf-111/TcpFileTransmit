@@ -1,4 +1,5 @@
 #pragma once
+
 #include <memory>
 
 #include "TcpClient.h"
@@ -16,8 +17,16 @@ class ViewModule {
     char selectPath[BUF_SIZE] = {};
     char sendToPath[BUF_SIZE] = {};
     char deletePath[BUF_SIZE] = {};
-    
+
+    char domain[BUF_SIZE] = {};
+    char ip[BUF_SIZE] = {};
+    int port;
+    char level[BUF_SIZE] = {};
+    int filesplit;
+    int threads;
+
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+
    public:
     std::shared_ptr<TcpClient> client;
     ViewModule(std::shared_ptr<TcpClient>);
@@ -26,6 +35,7 @@ class ViewModule {
     ViewModule &operator=(const ViewModule &) = delete;
 
     [[nodiscard]] std::shared_ptr<TcpClient> getClient() const;
+    void init();
     void render_resultUI(bool &);
     void render_query_window(bool &);
     void render_get_window(bool &);

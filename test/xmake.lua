@@ -6,7 +6,7 @@ add_requires("spdlog")
 add_requires("jsoncpp")
 add_requires("gtest")
 
-target("test")
+target("test") do
     set_kind("binary")
     add_files("*.cpp")
 	add_includedirs("../server/include")
@@ -16,3 +16,4 @@ target("test")
 	add_packages("spdlog")
 	add_packages("jsoncpp")
 	add_packages("gtest")
+end

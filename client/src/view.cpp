@@ -40,6 +40,8 @@ void app::view::glfw_error_callback(int error, const char* description) {
 
 void app::view::init(std::weak_ptr<Controller> controller) {
     this->controller = controller;
+    viewModule->init();
+
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return;
