@@ -38,7 +38,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     void ConvertDirStringToList(const std::string &);
     void handleRead();
-    void handleOutPutTime(std::string &);
+    const std::string handleOutPutTime(const std::string &);
     void registerQuery();
 
    public:

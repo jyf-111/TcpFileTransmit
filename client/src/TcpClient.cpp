@@ -54,7 +54,7 @@ void app::TcpClient::setResult(const std::string &result) {
     this->result = result;
 }
 
-std::string app::TcpClient::getResult() { return result; }
+std::string app::TcpClient::getResult() { return handleOutPutTime(result); }
 
 void app::TcpClient::setDirList(
     const std::vector<std::pair<std::string, std::size_t>> &dir) {
@@ -85,21 +85,21 @@ void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
     };
 }
 
-void app::TcpClient::handleOutPutTime(std::string &result) {
+const std::string app::TcpClient::handleOutPutTime(const std::string &result) {
     std::time_t t = std::time(nullptr);
     std::tm *now = std::localtime(&t);
 
-    std::string tmp;
-    tmp += "[";
-    tmp += std::to_string(now->tm_hour);
-    tmp += ":";
-    tmp += std::to_string(now->tm_min);
-    tmp += ":";
-    tmp += std::to_string(now->tm_sec);
-    tmp += "]\n";
-    tmp.append(result);
-    tmp.append("\n");
-    result = tmp;
+    std::string ret;
+    ret += "[";
+    ret += std::to_string(now->tm_hour);
+    ret += ":";
+    ret += std::to_string(now->tm_min);
+    ret += ":";
+    ret += std::to_string(now->tm_sec);
+    ret += "]\n";
+    ret.append(result);
+    ret.append("\n");
+    return ret;
 }
 
 void app::TcpClient::handleRead() {
@@ -155,7 +155,7 @@ void app::TcpClient::handleRead() {
                     const auto &total = protoBuf.GetTotal();
                     self->result.clear();
                     if (index < total) {
-                        self->result +=
+                        self->result =
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" + std::to_string(total);
                     } else if (index == total) {
@@ -166,12 +166,11 @@ void app::TcpClient::handleRead() {
                             File::ReNameFile(tmp + ".sw", tmp);
                         });
 
-                        self->result +=
+                        self->result =
                             "get file: " + protoBuf.GetPath().string() + " " +
                             std::to_string(index) + "/" +
                             std::to_string(total) + " ok";
                     }
-                    self->handleOutPutTime(self->result);
                 } else {
                     const auto &data = protoBuf.GetData();
                     if (protoBuf.GetIsDir()) {
@@ -180,8 +179,7 @@ void app::TcpClient::handleRead() {
                             std::string(data.begin(), data.end()));
                     } else {
                         self->result.clear();
-                        self->handleOutPutTime(self->result);
-                        self->result += std::string(data.begin(), data.end());
+                        self->result = std::string(data.begin(), data.end());
                     }
                 }
             } else {
@@ -238,16 +236,20 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
-    logger->info("connectting");
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<WriteSession>(socketPtr, io);
+
+    logger->info("connectting");
+    result = fmt::format("client is connectting");
 
     socketPtr->next_layer().async_connect(
         asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
         [self = shared_from_this()](const asio::system_error &e) {
             if (e.code()) {
-                warn("connect {}:{} failed: {}", self->ip, self->port,
-                     e.what());
+                self->logger->warn("connect {}:{} failed: {}", self->ip,
+                                   self->port, e.what());
+                self->result = fmt::format("connect {}:{} failed: {}", self->ip,
+                                           self->port, e.what());
                 self->timer->async_wait([self](const asio::system_error &e) {
                     // NOTE:
                     // windows 20s
@@ -257,14 +259,19 @@ void app::TcpClient::connect() {
                 return;
             }
             self->logger->info("connect {}:{} success ", self->ip, self->port);
+            self->result =
+                fmt::format("connect {}:{} success ", self->ip, self->port);
             self->socketPtr->async_handshake(
                 asio::ssl::stream_base::client,
                 [self](const asio::system_error &e) {
                     if (e.code()) {
                         self->logger->error("handshake failed: {}", e.what());
+                        self->result =
+                            fmt::format("handshake failed: {}", e.what());
                         return;
                     }
                     self->logger->info("handshake success");
+                    self->result = fmt::format("handshake success");
                     self->connectFlag = true;
                     self->session->doWrite();
                     self->handleRead();
@@ -280,13 +287,16 @@ void app::TcpClient::disconnect() {
             [self = shared_from_this()](const asio::system_error &e) {
                 if (e.code()) {
                     self->logger->error("shutdown failed: {}", e.what());
+                    self->result = fmt::format("shutdown failed: {}", e.what());
                     return;
                 }
                 self->logger->info("shutdown success");
+                self->result = fmt::format("shutdown success");
                 self->socketPtr->next_layer().close();
             });
     } else {
         logger->info("client is disconnect");
+        result = fmt::format("client is disconnect");
     }
 }
 
