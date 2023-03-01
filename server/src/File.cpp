@@ -28,7 +28,7 @@ const std::size_t File::GetRemoteFileSize(
         if (std::filesystem::path(filename).filename().string() ==
             path.filename().string()) {
             size = filesize;
-            spdlog::get("logger")->info("has rem ote swap file size = {}", size);
+            spdlog::get("logger")->info("has remote swap file size = {}", size);
         }
     }
     return size;

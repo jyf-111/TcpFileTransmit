@@ -15,7 +15,7 @@ class Controller {
    public:
     Controller() {
         loggerRegister = std::make_shared<LoggerRegister>();
-        logger = loggerRegister->getLogger();
+        logger = spdlog::get("logger");
         server = std::make_shared<TcpServer>();
     }
     void readProperties() {

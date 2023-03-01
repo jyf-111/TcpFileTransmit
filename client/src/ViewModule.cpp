@@ -9,6 +9,7 @@
 
 #include "File.h"
 #include "ImGuiFileDialog.h"
+#include "LoggerRegister.h"
 #include "Properties.h"
 #include "TcpClient.h"
 
@@ -56,9 +57,19 @@ void app::ViewModule::init() {
 void app::ViewModule::render_resultUI(bool &show_window) {
     ImGui::Begin("result", &show_window);
 
-    std::string res = client->getResult();
-    ImGui::Text("%s", res.c_str());
-    ImGui::End();
+    const std::string &res = LoggerRegister::getLogStream().str();
+    auto p = res.size();
+    std::string_view s = {res.begin(), res.begin() + p};
+    for (int i = 0; i < 15; i++) {
+        p = s.find_last_of('\n');
+        if (std::string::npos != p) {
+            s = s.substr(0, p);
+        } else {
+            break;
+        }
+    }
+    std::string show = {res.begin() + p + 1, res.end()};
+    ImGui::Text("%s", show.c_str());
 }
 
 void app::ViewModule::render_query_window(bool &show_window) {
@@ -129,7 +140,6 @@ void app::ViewModule::render_query_window(bool &show_window) {
         client->handleQuery(queryPath);
     } catch (std::exception &e) {
         spdlog::get("logger")->error("{}", e.what());
-        client->setResult(e.what());
     }
 }
 
@@ -141,7 +151,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::BulletText("远程保存文件路径:");
     ImGui::InputText("##save path", savePath, IM_ARRAYSIZE(savePath));
     ImGui::SameLine();
-    if (ImGui::Button("open explorer",ImVec2(160,0))) {
+    if (ImGui::Button("open explorer", ImVec2(160, 0))) {
         ImGuiFileDialog::Instance()->OpenDialog(
             "ChooseDirDlgKey", "Choose File", nullptr, ".", 1, nullptr,
             ImGuiFileDialogFlags_Modal);
@@ -174,7 +184,6 @@ void app::ViewModule::render_get_window(bool &show_window) {
             client->handleGet(getPath, savePath);
         } catch (const std::exception &e) {
             spdlog::get("logger")->error("{}", e.what());
-            client->setResult(e.what());
         }
     }
     ImGui::End();
@@ -239,7 +248,6 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
             client->handlePost(sendToPath, splitedData);
         } catch (std::exception &e) {
             spdlog::get("logger")->error("{}", e.what());
-            client->setResult(e.what());
         }
     }
 
@@ -263,7 +271,6 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
             client->handleDelete(deletePath);
         } catch (std::exception &e) {
             spdlog::get("logger")->error("{}", e.what());
-            client->setResult(e.what());
         }
     }
 
@@ -308,10 +315,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                 value["font"] = font;
                 Properties::writeProperties("config.json", value);
                 spdlog::get("logger")->info("config save success");
-                client->setResult("config save success");
             } catch (std::exception &e) {
                 spdlog::get("logger")->error("config save error:{}", e.what());
-                client->setResult("config save error");
             }
         }
     }

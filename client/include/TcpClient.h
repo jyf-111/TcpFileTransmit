@@ -1,6 +1,7 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
+
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 #include <filesystem>
@@ -9,6 +10,7 @@
 #include <vector>
 
 #include "WriteSession.h"
+
 
 using namespace spdlog;
 
@@ -20,7 +22,6 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::size_t port = 8000;
     std::size_t filesplit = 65536 * 3;
 
-    std::string result;
     std::vector<std::pair<std::string, std::size_t>> dirList;
     std::filesystem::path selectPath = ".";
     std::string savePath = ".";
@@ -38,7 +39,6 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     void ConvertDirStringToList(const std::string &);
     void handleRead();
-    const std::string handleOutPutTime(const std::string &);
     void registerQuery();
 
    public:
@@ -52,8 +52,6 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void setPort(const std::size_t &);
     [[nodiscard]] std::size_t getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
-    const std::string getResult();
-    void setResult(const std::string &);
     void setDirList(
         const std::vector<std::pair<std::string, std::size_t>> &dir);
     const std::vector<std::pair<std::string, std::size_t>> &getDirList();
