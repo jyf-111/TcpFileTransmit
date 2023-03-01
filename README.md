@@ -1,6 +1,10 @@
-## TcpFileTransmit
+
+# TcpFileTransmit
+
 ---
-### TOOLCHAIN
+
+## TOOLCHAIN
+
 - C++20
 - 文件操作主要依赖C++17的std::filesystem
 
@@ -12,8 +16,94 @@
 - 日志库: [spdlog](https://github.com/gabime/spdlog)
 - json库: [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 - 测试库: [gtest](https://github.com/google/googletest)
-- ui库: 
-	- 轻量级图形库: 
-		- [imgui](https://github.com/ocornut/imgui)
-		- [ImGuiFileDialog](https://github.com/aiekick/ImGuiFileDialog)
-	- opengl Extension: [glew](https://github.com/nigels-com/glew)
+- ui库:
+  - 轻量级图形库:
+    - [imgui](https://github.com/ocornut/imgui)
+    - [ImGuiFileDialog](https://github.com/aiekick/ImGuiFileDialog)
+  - opengl Extension: [glew](https://github.com/nigels-com/glew)
+
+## Build from source
+
+first get [xmake](https://github.com/xmake-io/xmake)
+
+then
+
+```bash
+git clone --recursive https://github.com/jyf-111/TcpFileTransmit
+cd TcpFileTransmit
+
+# build
+xmake -b server     # build server
+xmake -b client     # build client
+xmake -b test       # build test
+
+xmake               # or just `xmake` to build all
+
+# run
+xmake run server    # run server
+xmake run client    # run client
+```
+
+## config
+
+### server config
+
+example:
+
+```json
+{
+    "ip": "0.0.0.0",
+    "port": 8000,
+    "level": "info",
+    "filesplit": 15000,
+    "threads": 0,
+    "certificate": "cert/server.pem",
+    "privatekey": "cert/private.key"
+}
+```
+
+- ip
+listening address
+- port
+listening port
+- level
+log level(debug,info,warn,error,...)
+- filesplit
+split file into small slice to transmit
+- certificate
+the certificate file for tls
+- privatekey
+the privatekey for tls
+- threads
+if small than 1, it will be your machine cpu number
+else will be the `threads` number
+
+### client config
+
+example:
+
+```json
+{
+    "domain" : "jyfwin.japaneast.cloudapp.azure.com",
+    "filesplit" : 15000,
+    "font" : "font/微软雅黑.ttf",
+    "ip" : "127.0.0.1",
+    "level" : "debug",
+    "port" : 8000,
+    "threads" : 0
+}
+```
+
+- domain
+the domain to connect(high priority than ip)
+- ip
+the ip to connect
+- port
+listening port
+- filesplit
+split file into small slice to transmit
+- level
+log level(debug,info,warn,error,...)
+- threads
+if small than 1, it will be your machine cpu number
+else will be the `threads` number

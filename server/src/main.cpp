@@ -31,10 +31,10 @@ class Controller {
             } else {
                 server->setPort(value["port"].asUInt());
             }
-            if (value["log"].isNull()) {
-                logger->warn("log is null");
+            if (value["level"].isNull()) {
+                logger->warn("level is null");
             } else {
-                loggerRegister->setLevel(value["log"].asString());
+                loggerRegister->setLevel(value["level"].asString());
             }
             if (value["filesplit"].isNull()) {
                 logger->warn("filesplit is null");
@@ -59,9 +59,9 @@ class Controller {
             logger->info(
                 "ip:{} port:{} filesplit:{} threads:{} certificate: "
                 "{} privatekey: {}",
-                server->getIp(), server->getPort(), server->getFilesplitsize(),
-                server->getThreads(), server->getCertificate(),
-                server->getPrivateKey());
+                server->getIp(), server->getPort(),
+                server->getFilesplitsize(), server->getThreads(),
+                server->getCertificate(), server->getPrivateKey());
         } catch (std::exception& e) {
             logger->warn("{}", e.what());
         }

@@ -46,9 +46,9 @@ const std::string File::QueryDirectory() const {
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
         if (p.is_directory())
-            tmp += p.path().string() + " " +
+            tmp += p.path().string() + "\\ " +
                    std::to_string(std::filesystem::file_size(p.path())) +
-                   "\\\n";
+                   "\n";
         else
             tmp += p.path().string() + " " +
                    std::to_string(std::filesystem::file_size(p.path())) + "\n";

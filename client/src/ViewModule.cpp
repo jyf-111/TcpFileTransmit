@@ -148,7 +148,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
 
     ImGui::Text("获取文件");
 
-    ImGui::BulletText("远程保存文件路径:");
+    ImGui::BulletText("保存文件本地路径:");
     ImGui::InputText("##save path", savePath, IM_ARRAYSIZE(savePath));
     ImGui::SameLine();
     if (ImGui::Button("open explorer", ImVec2(160, 0))) {

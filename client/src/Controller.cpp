@@ -48,10 +48,10 @@ void Controller::readProperties() {
             logger->warn("threads is null");
         } else {
             std::size_t threads = value["threads"].asLargestUInt();
-            if (threads > 1)
+            if (threads > 0)
                 this->threads = threads;
             else
-                this->threads = std::thread::hardware_concurrency();
+                this->threads = std::thread::hardware_concurrency() - 1;
         }
         if (value["font"].isNull()) {
             logger->warn("font is null");
