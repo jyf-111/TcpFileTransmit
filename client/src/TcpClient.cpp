@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "File.h"
-#include "LoggerRegister.h"
 #include "ProtoBuf.h"
+#include "asio/error_code.hpp"
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger = spdlog::get("logger");
@@ -31,12 +31,25 @@ void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
 
     if (domain.size() != 0) {
-        try {
-            auto iter = resolver->resolve(domain, std::to_string(port));
-            setIp(iter->endpoint().address().to_string());
-        } catch (const asio::error_code &e) {
-            logger->error("{}", e.message());
-        }
+        resolver->async_resolve(
+            domain, std::to_string(port),
+            [self = shared_from_this()](
+                const asio::error_code &e,
+                asio::ip::tcp::resolver::iterator iter) {
+                if (e) {
+                    self->logger->warn("{}", e.message());
+                    self->timer->async_wait([self](const asio::error_code &e) {
+                        self->timer->expires_from_now(std::chrono::seconds(3));
+                        self->setDomain(self->domain);
+                    });
+                    return;
+                }
+                asio::ip::tcp::resolver::iterator end;
+                if (iter != end) {
+                    self->setIp(iter->endpoint().address().to_string());
+                    self->logger->info("resolve ip: {}", self->ip);
+                }
+            });
     }
 }
 
