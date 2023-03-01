@@ -54,6 +54,8 @@ void Controller::readProperties() {
                 this->threads = std::thread::hardware_concurrency();
         }
         if (value["font"].isNull()) {
+            logger->warn("font is null");
+        } else {
             this->font = value["font"].asString();
             logger->info("ip: {} port: {} level: {} filesplit: {}",
                          client->getIp(), client->getPort(), level,
