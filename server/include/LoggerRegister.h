@@ -6,7 +6,6 @@
 #include <stack>
 #include <string>
 
-#include "spdlog/sinks/ostream_sink.h "
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/wincolor_sink.h"
 
@@ -26,15 +25,10 @@ class LoggerRegister {
             "log/log", 1024 * 1024 * 10, 100);
         sinks.push_back(sink);
     }
-    void initResultWindowLogger() {
-        auto sink = std::make_shared<sinks::ostream_sink_mt>(ss);
-        sinks.push_back(sink);
-    }
 
     void initLogger() {
         initConSoleLogger();
         initFileLogger();
-        initResultWindowLogger();
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks),
                                                   end(sinks));
         register_logger(logger);
