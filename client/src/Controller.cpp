@@ -18,22 +18,47 @@ void Controller::readProperties() {
     try {
         const auto& value = Properties::readProperties("config.json");
         auto client = view->GetViewModule()->getClient();
-        client->setIp(value["ip"].asString());
-        client->setPort(value["port"].asLargestUInt());
-        client->setDomain(value["domain"].asString());
-        client->setFilesplit(value["filesplit"].asLargestUInt());
-        loggerRegister->setLevel(level = value["log"].asString());
-        logger->info("ip: {} port: {} level: {} filesplit: {}", client->getIp(),
-                     client->getPort(), level, client->getFilesplitsize());
-
-        std::size_t threads = value["threads"].asLargestUInt();
-        if (threads > 1)
-            this->threads = threads;
-        else
-            this->threads = std::thread::hardware_concurrency();
-
-        this->font = value["font"].asString();
-
+        if (value["ip"].isNull()) {
+            logger->error("ip is null");
+        } else {
+            client->setIp(value["ip"].asString());
+        }
+        if (value["port"].isNull()) {
+            logger->error("port is null");
+        } else {
+            client->setPort(value["port"].asLargestUInt());
+        }
+        if (value["domain"].isNull()) {
+            logger->warn("domain is null");
+        } else {
+            client->setDomain(value["domain"].asString());
+        }
+        if (value["filesplit"].isNull()) {
+            logger->warn("filesplit is null");
+        } else {
+            client->setFilesplit(value["filesplit"].asLargestUInt());
+        }
+        if (value["level"].isNull()) {
+            logger->warn("level is null");
+        } else {
+            this->level = value["level"].asString();
+            loggerRegister->setLevel(this->level);
+        }
+        if (value["threads"].isNull()) {
+            logger->warn("threads is null");
+        } else {
+            std::size_t threads = value["threads"].asLargestUInt();
+            if (threads > 1)
+                this->threads = threads;
+            else
+                this->threads = std::thread::hardware_concurrency();
+        }
+        if (value["font"].isNull()) {
+            this->font = value["font"].asString();
+            logger->info("ip: {} port: {} level: {} filesplit: {}",
+                         client->getIp(), client->getPort(), level,
+                         client->getFilesplitsize());
+        }
     } catch (std::exception& e) {
         logger->warn("{}", e.what());
     }
