@@ -13,6 +13,7 @@ class Controller : public std::enable_shared_from_this<Controller> {
 
     std::size_t threads;
     std::string level;
+    std::string font;
     std::shared_ptr<asio::io_context> io;
     std::shared_ptr<app::TcpClient> client;
     std::shared_ptr<app::ViewModule> viewModule;

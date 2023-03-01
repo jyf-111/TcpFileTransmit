@@ -19,7 +19,7 @@ class view {
 
    public:
     view(std::shared_ptr<app::ViewModule>);
-    void init(std::weak_ptr<Controller>);
+    void init(std::weak_ptr<Controller>,const std::string&);
     void loop();
     std::shared_ptr<app::ViewModule> GetViewModule();
     static void glfw_error_callback(int error, const char* description);

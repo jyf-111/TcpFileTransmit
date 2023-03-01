@@ -53,7 +53,9 @@ void app::TcpClient::setResult(const std::string &result) {
     this->result = result;
 }
 
-const std::string app::TcpClient::getResult() { return handleOutPutTime(result); }
+const std::string app::TcpClient::getResult() {
+    return handleOutPutTime(result);
+}
 
 void app::TcpClient::setDirList(
     const std::vector<std::pair<std::string, std::size_t>> &dir) {
@@ -213,6 +215,7 @@ void app::TcpClient::handleGet(const std::filesystem::path &path,
         savepath.string() + "/" + path.filename().string() + ".sw";
     if (File::FileIsExist(tmpFile)) {
         logger->info("swap file is exist: {}", tmpFile);
+        result = fmt::format("shutdown success");
         protoBuf.SetIndex(File::GetFileSize(tmpFile));
     }
     session->enqueue(protoBuf);

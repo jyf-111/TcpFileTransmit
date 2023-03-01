@@ -24,6 +24,7 @@ class ViewModule {
     char level[BUF_SIZE] = {};
     int filesplit;
     int threads;
+    char font[BUF_SIZE] = {};
 
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 

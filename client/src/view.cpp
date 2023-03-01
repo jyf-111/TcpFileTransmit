@@ -38,7 +38,8 @@ void app::view::glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-void app::view::init(std::weak_ptr<Controller> controller) {
+void app::view::init(std::weak_ptr<Controller> controller,
+                     const std::string& font) {
     this->controller = controller;
     viewModule->init();
 
@@ -105,7 +106,9 @@ void app::view::init(std::weak_ptr<Controller> controller) {
 // Freetype for higher quality font rendering.
 #define IMGUI_ENABLE_FREETYPE
     // io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF(R"(font\JBfont.ttf)", 30.0f);
+    io.Fonts->AddFontFromFileTTF(font.c_str(), 30.0f, nullptr,
+                                 io.Fonts->GetGlyphRangesChineseFull());
+    io.Fonts->Build();
 }
 
 void app::view::loop() {

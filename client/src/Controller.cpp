@@ -32,6 +32,8 @@ void Controller::readProperties() {
         else
             this->threads = std::thread::hardware_concurrency();
 
+        this->font = value["font"].asString();
+
     } catch (std::exception& e) {
         logger->warn("{}", e.what());
     }
@@ -39,7 +41,7 @@ void Controller::readProperties() {
 
 void Controller::init() {
     view->GetViewModule()->getClient()->connect();
-    view->init(shared_from_this());
+    view->init(shared_from_this(), font);
     view->loop();
 }
 

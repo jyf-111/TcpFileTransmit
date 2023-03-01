@@ -4,6 +4,7 @@
 #include <json/json.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <string>
 
 #include "File.h"
@@ -42,9 +43,11 @@ void app::ViewModule::init() {
     const std::string &level = value["level"].asString();
     const int filesplit = value["filesplit"].asInt();
     const int threads = value["threads"].asInt();
+    const std::string &font = value["font"].asString();
     std::copy(domain.begin(), domain.end(), std::begin(this->domain));
     std::copy(ip.begin(), ip.end(), std::begin(this->ip));
     std::copy(level.begin(), level.end(), std::begin(this->level));
+    std::copy(font.begin(), font.end(), std::begin(this->font));
     this->port = port;
     this->filesplit = filesplit;
     this->threads = threads;
@@ -61,11 +64,13 @@ void app::ViewModule::render_resultUI(bool &show_window) {
 void app::ViewModule::render_query_window(bool &show_window) {
     ImGui::Begin("Tcp File query", &show_window);
 
-    ImGui::BulletText("path:");
+    ImGui::BulletText("路径: ");
     ImGui::SameLine();
     ImGui::InputTextWithHint("##file path", "file path", queryPath,
                              IM_ARRAYSIZE(queryPath));
-    if (ImGui::Button("<back")) {
+    ImGui::Separator();
+
+    if (ImGui::Button("上层目录")) {
         std::string_view s{std::begin(queryPath),
                            std::begin(queryPath) + std::strlen(queryPath) - 1};
         if (s.size() >= 1) {
@@ -74,9 +79,21 @@ void app::ViewModule::render_query_window(bool &show_window) {
             queryPath[s.size()] = '\0';
         }
     }
+
     const auto &res = client->getDirList();
 
     if (ImGui::BeginTable("split", 2)) {
+        ImGui::TableNextColumn();
+        ImGui::Text("文件");
+        ImGui::TableNextColumn();
+
+        const auto sizeLabel = "大小(字节)";
+        auto posX = (ImGui::GetCursorPosX() + ImGui::GetColumnWidth() -
+                     ImGui::CalcTextSize(sizeLabel).x - ImGui::GetScrollX() -
+                     2 * ImGui::GetStyle().ItemSpacing.x);
+        if (posX > ImGui::GetCursorPosX()) ImGui::SetCursorPosX(posX);
+        ImGui::Text(sizeLabel);
+
         for (const auto &[filename, filesize] : res) {
             ImGui::TableNextColumn();
             if (ImGui::Selectable(filename.c_str())) {
@@ -119,12 +136,12 @@ void app::ViewModule::render_query_window(bool &show_window) {
 void app::ViewModule::render_get_window(bool &show_window) {
     ImGui::Begin("Tcp File get", &show_window);
 
-    ImGui::Text("get file");
+    ImGui::Text("获取文件");
 
-    ImGui::BulletText("Enter the place to save file:");
+    ImGui::BulletText("远程保存文件路径:");
     ImGui::InputText("##save path", savePath, IM_ARRAYSIZE(savePath));
     ImGui::SameLine();
-    if (ImGui::Button("open explorer")) {
+    if (ImGui::Button("open explorer",ImVec2(160,0))) {
         ImGuiFileDialog::Instance()->OpenDialog(
             "ChooseDirDlgKey", "Choose File", nullptr, ".", 1, nullptr,
             ImGuiFileDialogFlags_Modal);
@@ -146,11 +163,12 @@ void app::ViewModule::render_get_window(bool &show_window) {
         ImGuiFileDialog::Instance()->Close();
     }
 
-    ImGui::BulletText("Enter the file path to get on server:");
+    ImGui::Separator();
+    ImGui::BulletText("本地文件保存路径");
     ImGui::InputTextWithHint("##get file", "file path", getPath,
                              IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
-    if (ImGui::Button("get")) {
+    if (ImGui::Button("get file", ImVec2(160, 0))) {
         logger->info("get file: {}", getPath);
         try {
             client->handleGet(getPath, savePath);
@@ -165,8 +183,9 @@ void app::ViewModule::render_get_window(bool &show_window) {
 void app::ViewModule::render_add_file_window(bool &show_window) {
     ImGui::Begin("Tcp File Transmit", &show_window);
 
-    ImGui::Text("transmit file");
-    ImGui::BulletText("Enter the file path to transmit:");
+    ImGui::Text("传输文件");
+    ImGui::Separator();
+    ImGui::BulletText("传送的文件路径:");
 
     ImGui::SameLine();
     // NOTE: open Dialog Simple
@@ -198,13 +217,14 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
         ImGuiFileDialog::Instance()->Close();
     }
 
-    ImGui::BulletText("path to save on server");
+    ImGui::Separator();
+    ImGui::BulletText("远程保存路径");
     ImGui::InputTextWithHint("##path to save on server",
                              "path to save on server", sendToPath,
                              IM_ARRAYSIZE(sendToPath));
 
     ImGui::SameLine();
-    if (ImGui::Button("send file")) {
+    if (ImGui::Button("send")) {
         try {
             // NOTE: transmit file
             File file(selectPath);
@@ -229,8 +249,9 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
 void app::ViewModule::render_delete_file_window(bool &show_window) {
     ImGui::Begin("Tcp File delete", &show_window);
 
-    ImGui::Text("delete file");
-    ImGui::BulletText("Enter the file path to delete:");
+    ImGui::Text("删除文件");
+    ImGui::Separator();
+    ImGui::BulletText("远程文件删除路径:");
 
     ImGui::InputTextWithHint("##file path", "file path", deletePath,
                              IM_ARRAYSIZE(deletePath));
@@ -251,7 +272,7 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
 
 void app::ViewModule::render_setting_window(bool &show_window) {
     ImGui::Begin("setting", &show_window);
-
+    ImGui::Text("设置");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -273,6 +294,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
 
         ImGui::InputInt("threads", &threads);
 
+        ImGui::InputTextWithHint("font", "font", font, IM_ARRAYSIZE(font));
+
         if (ImGui::Button("save")) {
             try {
                 Json::Value value;
@@ -282,6 +305,7 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                 value["level"] = level;
                 value["filesplit"] = filesplit;
                 value["threads"] = threads;
+                value["font"] = font;
                 Properties::writeProperties("config.json", value);
                 spdlog::get("logger")->info("config save success");
                 client->setResult("config save success");
