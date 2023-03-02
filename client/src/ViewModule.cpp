@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <cassert>
 #include <string>
 
 #include "File.h"
@@ -12,6 +13,7 @@
 #include "LoggerRegister.h"
 #include "Properties.h"
 #include "TcpClient.h"
+
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a
@@ -30,6 +32,7 @@ static void HelpMarker(const char *desc) {
 app::ViewModule::ViewModule(std::shared_ptr<TcpClient> tcpClient)
     : client(std::move(tcpClient)) {
     logger = spdlog::get("logger");
+    assert(logger != nullptr);
 }
 
 std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {

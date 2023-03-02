@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <array>
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -15,6 +16,8 @@
 
 TcpServer::TcpServer() {
     logger = spdlog::get("logger");
+    assert(logger != nullptr);
+
     io = std::make_shared<asio::io_context>();
     fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
     sig = std::make_shared<asio::signal_set>(*io, SIGINT, SIGTERM);
@@ -92,6 +95,7 @@ void TcpServer::handleSignal(std::weak_ptr<ssl_socket> ptr) {
         return;
     };
     auto socket_ptr = ptr.lock();
+    assert(socket_ptr);
     sig->async_wait([socket_ptr, self = shared_from_this()](
                         const std::error_code& e, int signal_number) {
         switch (signal_number) {

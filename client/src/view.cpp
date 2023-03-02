@@ -143,9 +143,8 @@ void app::view::loop() {
             viewModule->render_query_window(show_window);
         } else {
             auto ctl = controller.lock();
-            if (ctl != nullptr) {
-                ctl->stop();
-            }
+            assert(ctl);
+            ctl->stop();
             break;
         }
 

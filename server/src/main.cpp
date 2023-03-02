@@ -1,6 +1,7 @@
 #include <spdlog/spdlog.h>
 
 #include <asio.hpp>
+#include <cassert>
 #include <memory>
 
 #include "LoggerRegister.h"
@@ -16,6 +17,8 @@ class Controller {
     Controller() {
         loggerRegister = std::make_shared<LoggerRegister>();
         logger = spdlog::get("logger");
+        assert(logger != nullptr);
+
         server = std::make_shared<TcpServer>();
     }
     void readProperties() {
@@ -59,9 +62,9 @@ class Controller {
             logger->info(
                 "ip:{} port:{} filesplit:{} threads:{} certificate: "
                 "{} privatekey: {}",
-                server->getIp(), server->getPort(),
-                server->getFilesplitsize(), server->getThreads(),
-                server->getCertificate(), server->getPrivateKey());
+                server->getIp(), server->getPort(), server->getFilesplitsize(),
+                server->getThreads(), server->getCertificate(),
+                server->getPrivateKey());
         } catch (std::exception& e) {
             logger->warn("{}", e.what());
         }

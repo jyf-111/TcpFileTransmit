@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <sstream>
@@ -12,8 +13,11 @@
 #include "ProtoBuf.h"
 #include "asio/error_code.hpp"
 
+
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger = spdlog::get("logger");
+    assert(logger != nullptr);
+
     fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
     timer = std::make_unique<asio::steady_timer>(*io, std::chrono::seconds(3));
     resolver = std::make_unique<asio::ip::tcp::resolver>(*io);

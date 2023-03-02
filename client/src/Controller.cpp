@@ -8,6 +8,8 @@
 Controller::Controller() {
     loggerRegister = std::make_shared<LoggerRegister>();
     logger = spdlog::get("logger");
+    assert(logger != nullptr);
+
     io = std::make_shared<asio::io_context>();
     client = std::make_shared<app::TcpClient>(io);
     viewModule = std::make_shared<app::ViewModule>(client);

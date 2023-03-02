@@ -1,4 +1,4 @@
-add_rules("mode.release")
+add_rules("mode.debug", "mode.release")
 set_languages("c99", "c++20")
 
 add_requires("asio")
@@ -7,10 +7,13 @@ add_requires("jsoncpp")
 add_requires("openssl")
 
 target("server")
-    set_kind("binary")
+do
+	set_kind("binary")
 	add_includedirs("include")
-    add_files("src/*.cpp")
+	add_files("src/*.cpp")
+
 	add_packages("asio")
 	add_packages("spdlog")
 	add_packages("jsoncpp")
-    add_packages("openssl")
+	add_packages("openssl")
+end
