@@ -13,6 +13,6 @@ class Controller {
 
    public:
     Controller();
-
+    void init();
     void run();
 };

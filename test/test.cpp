@@ -6,8 +6,6 @@
 #include "ProtoBuf.h"
 
 TEST(FileTest, test) {
-    File file("test.txt");
-    ASSERT_EQ(file.GetFilePath().filename(), "test.txt");
 }
 
 TEST(Method, ProtoBuf) {

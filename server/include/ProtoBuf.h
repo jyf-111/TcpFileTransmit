@@ -20,6 +20,14 @@ class ProtoBuf {
         Post,
         Delete,
     };
+
+    [[nodiscard]] const std::string toString() const;
+
+    static std::string MethodToString(const Method &);
+    static Method StringToMethod(std::string &);
+    friend std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf);
+    friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
+
     ProtoBuf(const Method &method, const std::filesystem::path &path,
              const std::vector<char> &data);
     ProtoBuf() = default;
@@ -28,51 +36,24 @@ class ProtoBuf {
     ProtoBuf &operator=(const ProtoBuf &) = default;
     ProtoBuf &operator=(ProtoBuf &&) = default;
 
-    static std::string MethodToString(const Method &);
-
-    static Method StringToMethod(std::string &);
-
     [[nodiscard]] const std::size_t &GetSize() const;
-
-    void SetSize(const std::size_t &);
-
     [[nodiscard]] const std::size_t &GetHeadSize() const;
-
-    void SetHeadSize(const std::size_t &);
-
     [[nodiscard]] const bool &GetIsDir() const;
-
-    void SetIsDir(const bool &);
-
     [[nodiscard]] const bool &GetIsFile() const;
-
-    void SetIsFile(const bool &);
-
     [[nodiscard]] const std::size_t &GetIndex() const;
-
-    void SetIndex(const std::size_t &);
-
     [[nodiscard]] const std::size_t &GetTotal() const;
-
-    inline void SetTotal(const std::size_t &total);
-
     [[nodiscard]] Method GetMethod() const;
-
-    void SetMethod(Method);
-
     [[nodiscard]] std::filesystem::path GetPath() const;
-
-    void SetPath(std::filesystem::path);
-
     [[nodiscard]] const std::vector<char> &GetData() const;
-
+    void SetSize(const std::size_t &);
+    void SetHeadSize(const std::size_t &);
+    void SetIsDir(const bool &);
+    void SetIsFile(const bool &);
+    void SetIndex(const std::size_t &);
+    inline void SetTotal(const std::size_t &total);
+    void SetMethod(Method);
+    void SetPath(std::filesystem::path);
     void SetData(const std::vector<char> &);
-
-    friend std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf);
-
-    friend std::istream &operator>>(std::istream &is, const ProtoBuf &protoBuf);
-
-    [[nodiscard]] const std::string toString() const;
 
    private:
     std::size_t size;
@@ -97,6 +78,13 @@ inline ProtoBuf::ProtoBuf(const Method &method,
                      ProtoBuf::MethodToString(method).size() +
                      path.string().size() + 4;
     this->size = headsize + data.size();
+}
+
+inline const std::string ProtoBuf::toString() const {
+    return "protobuf " + std::to_string(size) + " " + std::to_string(headsize) +
+           " " + std::to_string(isDir) + " " + std::to_string(isFile) + " " +
+           std::to_string(index) + " " + std::to_string(total) + " " +
+           MethodToString(method) + " " + path.string();
 }
 
 inline std::string ProtoBuf::MethodToString(const Method &method) {
@@ -125,52 +113,6 @@ inline ProtoBuf::Method ProtoBuf::StringToMethod(std::string &string) {
         return Method::Delete;
     else
         throw std::runtime_error("Unknown method");
-}
-
-inline const std::size_t &ProtoBuf::GetSize() const { return this->size; }
-
-inline void ProtoBuf::SetSize(const std::size_t &size) { this->size = size; }
-
-inline const std::size_t &ProtoBuf::GetHeadSize() const {
-    return this->headsize;
-}
-
-inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
-    this->headsize = headsize;
-}
-
-inline const bool &ProtoBuf::GetIsDir() const { return this->isDir; }
-
-inline void ProtoBuf::SetIsDir(const bool &isDir) { this->isDir = isDir; }
-
-inline const bool &ProtoBuf::GetIsFile() const { return this->isFile; }
-
-inline void ProtoBuf::SetIsFile(const bool &isFile) { this->isFile = isFile; }
-
-inline const std::size_t &ProtoBuf::GetIndex() const { return this->index; }
-
-inline void ProtoBuf::SetIndex(const std::size_t &index) {
-    this->index = index;
-}
-
-inline const std::size_t &ProtoBuf::GetTotal() const { return this->total; }
-
-inline void ProtoBuf::SetTotal(const std::size_t &total) {
-    this->total = total;
-}
-
-inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
-
-inline void ProtoBuf::SetMethod(Method method) { this->method = method; }
-
-inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
-
-inline void ProtoBuf::SetPath(std::filesystem::path path) { this->path = path; }
-
-inline const std::vector<char> &ProtoBuf::GetData() const { return data; }
-
-inline void ProtoBuf::SetData(const std::vector<char> &data) {
-    this->data = data;
 }
 
 inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
@@ -228,9 +170,48 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     return is;
 }
 
-inline const std::string ProtoBuf::toString() const {
-    return "protobuf " + std::to_string(size) + " " + std::to_string(headsize) +
-           " " + std::to_string(isDir) + " " + std::to_string(isFile) + " " +
-           std::to_string(index) + " " + std::to_string(total) + " " +
-           MethodToString(method) + " " + path.string();
+inline const std::size_t &ProtoBuf::GetSize() const { return this->size; }
+
+inline void ProtoBuf::SetSize(const std::size_t &size) { this->size = size; }
+
+inline const std::size_t &ProtoBuf::GetHeadSize() const {
+    return this->headsize;
+}
+
+inline void ProtoBuf::SetHeadSize(const std::size_t &headsize) {
+    this->headsize = headsize;
+}
+
+inline const bool &ProtoBuf::GetIsDir() const { return this->isDir; }
+
+inline void ProtoBuf::SetIsDir(const bool &isDir) { this->isDir = isDir; }
+
+inline const bool &ProtoBuf::GetIsFile() const { return this->isFile; }
+
+inline void ProtoBuf::SetIsFile(const bool &isFile) { this->isFile = isFile; }
+
+inline const std::size_t &ProtoBuf::GetIndex() const { return this->index; }
+
+inline void ProtoBuf::SetIndex(const std::size_t &index) {
+    this->index = index;
+}
+
+inline const std::size_t &ProtoBuf::GetTotal() const { return this->total; }
+
+inline void ProtoBuf::SetTotal(const std::size_t &total) {
+    this->total = total;
+}
+
+inline ProtoBuf::Method ProtoBuf::GetMethod() const { return method; }
+
+inline void ProtoBuf::SetMethod(Method method) { this->method = method; }
+
+inline std::filesystem::path ProtoBuf::GetPath() const { return path; }
+
+inline void ProtoBuf::SetPath(std::filesystem::path path) { this->path = path; }
+
+inline const std::vector<char> &ProtoBuf::GetData() const { return data; }
+
+inline void ProtoBuf::SetData(const std::vector<char> &data) {
+    this->data = data;
 }
