@@ -11,8 +11,10 @@
 #include <vector>
 
 #include "File.h"
+#include "Properties.h"
 #include "ProtoBuf.h"
 #include "WriteSession.h"
+#include "spdlog/common.h"
 
 TcpServer::TcpServer() {
     logger = spdlog::get("logger");
@@ -58,11 +60,11 @@ void TcpServer::setCertificate(const std::string& certificate) {
 }
 
 [[nodiscard]] std::string TcpServer::getPrivateKey() const {
-    return private_key;
+    return privatekey;
 }
 
 void TcpServer::setPrivateKey(const std::string& private_key) {
-    this->private_key = private_key;
+    this->privatekey = private_key;
 }
 
 void TcpServer::handleCloseSocket(std::shared_ptr<ssl_socket> socket_ptr) {
@@ -162,16 +164,38 @@ auto TcpServer::handleFileAction(ProtoBuf& protoBuf)
     return "unknown method";
 }
 
-void TcpServer::handleAccept() {
-    asio::ssl::context ssl_context{asio::ssl::context::tls};
+void TcpServer::init() {
+    const auto& value = Properties::readProperties();
+    ip = value["ip"].asString();
+    port = value["port"].asLargestUInt();
+    filesplit = value["filesplit"].asLargestUInt();
+    threads = value["threads"].asLargestUInt();
+    if (threads == 0) {
+        threads = std::thread::hardware_concurrency();
+    }
+    certificate = value["certificate"].asString();
+    privatekey = value["privatekey"].asString();
+
+    assert(!ip.empty());
+    assert(port >= 0);
+    assert(filesplit > 0);
+    assert(threads > 0);
+
+    logger->info(
+        "ip:{} port:{} filesplit:{} threads:{} certificate: "
+        "{} privatekey: {}",
+        ip, port, filesplit, threads, certificate, privatekey);
+
     ssl_context.set_options(asio::ssl::context::default_workarounds |
                             asio::ssl::context::no_sslv2);
     ssl_context.set_verify_mode(asio::ssl::verify_peer |
                                 asio::ssl::verify_fail_if_no_peer_cert);
     ssl_context.set_verify_mode(1);
     ssl_context.use_certificate_file(certificate, asio::ssl::context::pem);
-    ssl_context.use_private_key_file(private_key, asio::ssl::context::pem);
+    ssl_context.use_private_key_file(privatekey, asio::ssl::context::pem);
+}
 
+void TcpServer::handleAccept() {
     auto socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     auto writeSession = std::make_shared<WriteSession>(socketPtr, io);
 

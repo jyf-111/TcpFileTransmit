@@ -14,13 +14,14 @@
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::shared_ptr<spdlog::logger> logger;
 
-    std::string ip = "127.0.0.1";
-    std::size_t port = 8000;
-    std::size_t filesplit = 65536 * 4;
+    std::string ip;
+    std::size_t port;
+    std::size_t filesplit;
     std::size_t threads;
     std::string certificate;
-    std::string private_key;
+    std::string privatekey;
 
+    asio::ssl::context ssl_context{asio::ssl::context::tls};
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_context> io;
     std::shared_ptr<asio::io_context::strand> fileWriteStrand;
@@ -53,6 +54,7 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     [[nodiscard]] std::string getPrivateKey() const;
     void setPrivateKey(const std::string &);
 
+    void init();
     void handleAccept();
     void run();
 };
