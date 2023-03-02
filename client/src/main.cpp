@@ -12,7 +12,6 @@ int main(int, char**) {
 
     try {
         auto controller = std::make_shared<Controller>();
-        controller->readProperties();
         controller->run();
         controller->init();
     } catch (std::exception& e) {

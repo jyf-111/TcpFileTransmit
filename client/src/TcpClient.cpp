@@ -10,13 +10,25 @@
 #include <vector>
 
 #include "File.h"
+#include "Properties.h"
 #include "ProtoBuf.h"
-#include "asio/error_code.hpp"
-
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger = spdlog::get("logger");
     assert(logger != nullptr);
+
+    const auto &value = Properties::readProperties();
+    domain = value["domain"].asString();
+    ip = value["ip"].asString();
+    port = value["port"].asLargestUInt();
+    filesplit = value["filesplit"].asLargestUInt();
+
+    assert(!domain.empty() || !ip.empty());
+    assert(port != 0);
+    assert(filesplit != 0);
+
+    logger->info("domain: {}, ip: {}, port: {}, filesplit: {}", domain, ip,
+                 port, filesplit);
 
     fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
     timer = std::make_unique<asio::steady_timer>(*io, std::chrono::seconds(3));
@@ -33,28 +45,6 @@ std::string app::TcpClient::getDomain() const { return this->domain; }
 
 void app::TcpClient::setDomain(const std::string &domain) {
     this->domain = domain;
-
-    if (domain.size() != 0) {
-        resolver->async_resolve(
-            domain, std::to_string(port),
-            [self = shared_from_this()](
-                const asio::error_code &e,
-                asio::ip::tcp::resolver::iterator iter) {
-                if (e) {
-                    self->logger->warn("{}", e.message());
-                    self->timer->async_wait([self](const asio::error_code &e) {
-                        self->timer->expires_from_now(std::chrono::seconds(3));
-                        self->setDomain(self->domain);
-                    });
-                    return;
-                }
-                asio::ip::tcp::resolver::iterator end;
-                if (iter != end) {
-                    self->setIp(iter->endpoint().address().to_string());
-                    self->logger->info("resolve ip: {}", self->ip);
-                }
-            });
-    }
 }
 
 std::size_t app::TcpClient::getPort() const { return port; }
@@ -126,7 +116,7 @@ void app::TcpClient::handleRead() {
             if (e) {
                 self->disconnect();
                 self->logger->error("async_read: {}", e.message());
-                self->connect();
+                self->ipConnect();
                 return;
             }
             self->logger->debug("read complete");
@@ -229,6 +219,37 @@ void app::TcpClient::handleDelete(const std::filesystem::path &path) {
 };
 
 void app::TcpClient::connect() {
+    if (domain.empty()) {
+        ipConnect();
+    } else {
+        domainConnect();
+    }
+}
+
+void app::TcpClient::domainConnect() {
+    assert(!domain.empty());
+    resolver->async_resolve(
+        domain, std::to_string(port),
+        [self = shared_from_this()](const asio::error_code &e,
+                                    asio::ip::tcp::resolver::iterator iter) {
+            if (e) {
+                self->logger->warn("{}", e.message());
+                self->timer->async_wait([self](const asio::error_code &e) {
+                    self->timer->expires_from_now(std::chrono::seconds(3));
+                    self->domainConnect();
+                });
+                return;
+            }
+            asio::ip::tcp::resolver::iterator end;
+            if (iter != end) {
+                self->setIp(iter->endpoint().address().to_string());
+                self->logger->info("resolve ip: {}", self->ip);
+                self->ipConnect();
+            }
+        });
+}
+
+void app::TcpClient::ipConnect() {
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<WriteSession>(socketPtr, io);
 
@@ -244,7 +265,7 @@ void app::TcpClient::connect() {
                     // NOTE:
                     // windows 20s
                     // linux 127s
-                    self->connect();
+                    self->ipConnect();
                 });
                 return;
             }

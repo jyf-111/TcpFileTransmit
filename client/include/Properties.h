@@ -2,6 +2,7 @@
 
 #include <json/json.h>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -11,6 +12,7 @@
 
 class Properties {
     static std::unique_ptr<Json::Value> root;
+    static std::filesystem::path path;
 
    public:
     Properties() = delete;
@@ -19,8 +21,7 @@ class Properties {
     Properties(Properties&&) = delete;
     Properties& operator=(Properties&&) = delete;
 
-    static const Json::Value& readProperties(
-        const std::filesystem::path& path) {
+    static const Json::Value& readProperties() {
         if (root == nullptr) {
             Json::CharReaderBuilder readerBuilder;
             readerBuilder["emitUTF8"] = true;
@@ -53,3 +54,4 @@ class Properties {
     }
 };
 inline std::unique_ptr<Json::Value> Properties::root = nullptr;
+inline std::filesystem::path Properties::path = "config.json";

@@ -16,61 +16,21 @@ Controller::Controller() {
     view = std::make_shared<app::view>(std::move(viewModule));
 }
 
-void Controller::readProperties() {
-    try {
-        const auto& value = Properties::readProperties("config.json");
-        auto client = view->GetViewModule()->getClient();
-        if (value["ip"].isNull()) {
-            logger->error("ip is null");
-        } else {
-            client->setIp(value["ip"].asString());
-        }
-        if (value["port"].isNull()) {
-            logger->error("port is null");
-        } else {
-            client->setPort(value["port"].asLargestUInt());
-        }
-        if (value["domain"].isNull()) {
-            logger->warn("domain is null");
-        } else {
-            client->setDomain(value["domain"].asString());
-        }
-        if (value["filesplit"].isNull()) {
-            logger->warn("filesplit is null");
-        } else {
-            client->setFilesplit(value["filesplit"].asLargestUInt());
-        }
-        if (value["level"].isNull()) {
-            logger->warn("level is null");
-        } else {
-            this->level = value["level"].asString();
-            loggerRegister->setLevel(this->level);
-        }
-        if (value["threads"].isNull()) {
-            logger->warn("threads is null");
-        } else {
-            std::size_t threads = value["threads"].asLargestUInt();
-            if (threads > 0)
-                this->threads = threads;
-            else
-                this->threads = std::thread::hardware_concurrency() - 1;
-        }
-        if (value["font"].isNull()) {
-            logger->warn("font is null");
-        } else {
-            this->font = value["font"].asString();
-            logger->info("ip: {} port: {} level: {} filesplit: {}",
-                         client->getIp(), client->getPort(), level,
-                         client->getFilesplitsize());
-        }
-    } catch (std::exception& e) {
-        logger->warn("{}", e.what());
-    }
-}
-
 void Controller::init() {
+    const auto& value = Properties::readProperties();
+    this->level = value["level"].asString();
+    this->threads = value["threads"].asLargestUInt();
+    if (threads == 0) this->threads = std::thread::hardware_concurrency() - 1;
+    this->font = value["font"].asString();
+    assert(!level.empty());
+    assert(threads > 0);
+    assert(!font.empty());
+
+    logger->info("level: {} threads: {} font: {}", level, threads, font);
+
     view->GetViewModule()->getClient()->connect();
     view->init(shared_from_this(), font);
+
     view->loop();
 }
 

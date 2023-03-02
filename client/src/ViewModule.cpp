@@ -14,7 +14,6 @@
 #include "Properties.h"
 #include "TcpClient.h"
 
-
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a
 // merged icon fonts (see docs/FONTS.md)
@@ -40,7 +39,7 @@ std::shared_ptr<app::TcpClient> app::ViewModule::getClient() const {
 }
 
 void app::ViewModule::init() {
-    const Json::Value &value = Properties::readProperties("config.json");
+    const Json::Value &value = Properties::readProperties();
     const std::string &domain = value["domain"].asString();
     const std::string &ip = value["ip"].asString();
     const int port = value["port"].asInt();

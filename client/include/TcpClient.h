@@ -12,16 +12,15 @@
 #include "WriteSession.h"
 #include "asio/steady_timer.hpp"
 
-
 using namespace spdlog;
 
 namespace app {
 
 class TcpClient : public std::enable_shared_from_this<TcpClient> {
     std::string domain;
-    std::string ip = "127.0.0.1";
-    std::size_t port = 8000;
-    std::size_t filesplit = 65536 * 3;
+    std::string ip;
+    std::size_t port;
+    std::size_t filesplit;
 
     std::vector<std::pair<std::string, std::size_t>> dirList;
     std::filesystem::path selectPath = ".";
@@ -67,6 +66,8 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void handleDelete(const std::filesystem::path &);
 
     void connect();
+    void domainConnect();
+    void ipConnect();
     void disconnect();
     bool isConnected();
 };
