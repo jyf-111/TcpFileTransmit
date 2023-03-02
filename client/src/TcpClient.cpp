@@ -30,7 +30,6 @@ app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger->info("domain: {}, ip: {}, port: {}, filesplit: {}", domain, ip,
                  port, filesplit);
 
-    fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
     timer = std::make_unique<asio::steady_timer>(*io, std::chrono::seconds(3));
     resolver = std::make_unique<asio::ip::tcp::resolver>(*io);
 }
@@ -67,6 +66,16 @@ const std::vector<std::pair<std::string, std::size_t>>
     return dirList;
 }
 
+void app::TcpClient::setqueryPath(const std::filesystem::path &selectPath) {
+    this->queryPath = selectPath;
+}
+
+[[nodiscard]] const std::filesystem::path &app::TcpClient::getqueryPath() {
+    return this->queryPath;
+}
+
+void app::TcpClient::clearDirList() { dirList.clear(); }
+
 void app::TcpClient::setSavePath(const std::string &savePath) {
     this->savePath = savePath;
 }
@@ -86,107 +95,8 @@ void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
     };
 }
 
-void app::TcpClient::handleRead() {
-    if (!connectFlag) throw std::runtime_error("not connected");
-    auto resultBuf = std::make_shared<asio::streambuf>();
-    auto streambuf = std::make_shared<asio::streambuf>();
-    auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
-
-    asio::async_read(
-        *socketPtr, *streambuf,
-        [peek, streambuf, self = shared_from_this()](
-            const asio::system_error &e, std::size_t size) -> std::size_t {
-            if (e.code()) {
-                self->logger->error("async_reading: {}", e.what());
-                return 0;
-            }
-            if (size == sizeof(std::size_t)) {
-                std::memcpy(peek.get(), streambuf.get()->data().data(),
-                            sizeof(std::size_t));
-            }
-            if (size > sizeof(std::size_t) &&
-                size == *reinterpret_cast<std::size_t *>(peek.get())) {
-                return 0;
-            } else {
-                return 1;
-            }
-        },
-        [streambuf, self = shared_from_this()](const asio::error_code &e,
-                                               std::size_t size) {
-            if (e) {
-                self->disconnect();
-                self->logger->error("async_read: {}", e.message());
-                self->ipConnect();
-                return;
-            }
-            self->logger->debug("read complete");
-
-            self->handleRead();
-
-            ProtoBuf protoBuf;
-            std::istream is(streambuf.get());
-            is >> protoBuf;
-
-            if (ProtoBuf::Method::Post == protoBuf.GetMethod()) {
-                if (protoBuf.GetIsFile()) {
-                    self->fileWriteStrand->post([self, protoBuf]() {
-                        File file(self->savePath + "/" +
-                                  protoBuf.GetPath().filename().string() +
-                                  ".sw");
-                        file.SetFileData(protoBuf.GetData());
-                    });
-                    const auto &index = protoBuf.GetIndex();
-                    const auto &total = protoBuf.GetTotal();
-                    if (index < total) {
-                        self->logger->info(
-                            "get file: " + protoBuf.GetPath().string() + " " +
-                            std::to_string(index) + "/" +
-                            std::to_string(total));
-                    } else if (index == total) {
-                        self->fileWriteStrand->post([self, protoBuf]() {
-                            const auto &tmp =
-                                self->savePath + "/" +
-                                protoBuf.GetPath().filename().string();
-                            File::ReNameFile(tmp + ".sw", tmp);
-                        });
-                        self->logger->info(
-                            "get file: " + protoBuf.GetPath().string() + " " +
-                            std::to_string(index) + "/" +
-                            std::to_string(total) + " ok");
-                    }
-                } else {
-                    const auto &data = protoBuf.GetData();
-                    if (protoBuf.GetIsDir()) {
-                        self->dirList.clear();
-                        self->ConvertDirStringToList(
-                            std::string(data.begin(), data.end()));
-                    } else {
-                        self->logger->info(
-                            std::string(data.begin(), data.end()));
-                    }
-                }
-            } else {
-                self->logger->error("recv protobuf`s method is not post");
-            }
-        });
-}
-
-void app::TcpClient::registerQuery() {
-    if (connectFlag == false) return;
-    timer->async_wait([self = shared_from_this()](const asio::error_code &e) {
-        if (e) {
-            self->logger->error("{}", e.message());
-            return;
-        }
-        self->session->enqueue({ProtoBuf::Method::Query, self->selectPath,
-                                std::vector<char>{'n', 'u', 'l', 'l'}});
-        self->timer->expires_from_now(std::chrono::seconds(3));
-        self->registerQuery();
-    });
-}
-
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {
-    selectPath = path;
+    queryPath = path;
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path,
@@ -251,7 +161,8 @@ void app::TcpClient::domainConnect() {
 
 void app::TcpClient::ipConnect() {
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
-    session = std::make_shared<WriteSession>(socketPtr, io);
+    session = std::make_shared<ClientSession>(socketPtr, io);
+    session->initClient(shared_from_this());
 
     logger->info("connectting");
 
@@ -279,9 +190,9 @@ void app::TcpClient::ipConnect() {
                     }
                     self->logger->info("handshake success");
                     self->connectFlag = true;
+                    self->session->registerQuery();
                     self->session->doWrite();
-                    self->handleRead();
-                    self->registerQuery();
+                    self->session->doRead();
                 });
         });
 }

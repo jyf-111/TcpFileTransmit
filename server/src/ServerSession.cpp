@@ -171,6 +171,7 @@ void ServerSession::doWrite() {
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os{buf.get()};
     os << writeQueue.front();
+    writeQueue.pop();
     asio::async_write(*socketPtr, *buf,
                       [self = shared_from_this()](const asio::error_code& e,
                                                   std::size_t size) {

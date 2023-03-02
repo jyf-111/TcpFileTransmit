@@ -150,7 +150,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
 
     ImGui::Text("获取文件");
 
-    ImGui::BulletText("保存文件本地路径:");
+    ImGui::BulletText("文件本地保存路径:");
     ImGui::InputText("##save path", savePath, IM_ARRAYSIZE(savePath));
     ImGui::SameLine();
     if (ImGui::Button("open explorer", ImVec2(160, 0))) {
@@ -176,7 +176,7 @@ void app::ViewModule::render_get_window(bool &show_window) {
     }
 
     ImGui::Separator();
-    ImGui::BulletText("本地文件保存路径");
+    ImGui::BulletText("文件远程路径");
     ImGui::InputTextWithHint("##get file", "file path", getPath,
                              IM_ARRAYSIZE(getPath));
     ImGui::SameLine();
@@ -238,14 +238,12 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     if (ImGui::Button("send")) {
         try {
             // NOTE: transmit file
-            File file(selectPath);
-
             const auto &dirList = client->getDirList();
             const std::string &path{selectPath};
             const auto size = File::GetRemoteFileSize(path + ".sw", dirList);
             const auto filesplitsize = client->getFilesplitsize();
             const auto &splitedData =
-                file.GetFileDataSplited(size, filesplitsize);
+                File::GetFileDataSplited(selectPath, size, filesplitsize);
 
             client->handlePost(sendToPath, splitedData);
         } catch (std::exception &e) {
@@ -280,7 +278,7 @@ void app::ViewModule::render_delete_file_window(bool &show_window) {
 }
 
 void app::ViewModule::render_setting_window(bool &show_window) {
-    ImGui::Begin("setting", &show_window);
+    ImGui::Begin("Setting window", &show_window);
     ImGui::Text("设置");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

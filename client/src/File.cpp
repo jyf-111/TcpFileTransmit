@@ -1,5 +1,4 @@
 #include "File.h"
-
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
@@ -7,10 +6,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-File::File() = default;
-
-File::File(const std::filesystem::path &path) : path(std::move(path)) {}
 
 const std::size_t File::GetFileSize(const std::filesystem::path &path) {
     return std::filesystem::file_size(path);
@@ -39,16 +34,15 @@ void File::ReNameFile(const std::filesystem::path &from,
     std::filesystem::rename(from, to);
 }
 
-const std::string File::QueryDirectory() const {
+const std::string File::QueryDirectory(const std::filesystem::path &path) {
     if (path.empty() || !std::filesystem::exists(path)) {
         throw std::runtime_error("path is empty or is not exist");
     }
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
         if (p.is_directory())
-            tmp += p.path().string() + " " +
-                   std::to_string(std::filesystem::file_size(p.path())) +
-                   "\\\n";
+            tmp += p.path().string() + "\\ " +
+                   std::to_string(std::filesystem::file_size(p.path())) + "\n";
         else
             tmp += p.path().string() + " " +
                    std::to_string(std::filesystem::file_size(p.path())) + "\n";
@@ -56,10 +50,9 @@ const std::string File::QueryDirectory() const {
     return tmp;
 }
 
-const std::filesystem::path &File::GetFilePath() const { return path; }
-
 const std::vector<std::vector<char>> File::GetFileDataSplited(
-    const int &index, const std::size_t &slice) const {
+    const std::filesystem::path &path, const int &index,
+    const std::size_t &slice) {
     if (path.empty() || !std::filesystem::is_regular_file(path)) {
         throw std::runtime_error("path is empty or is not regular file");
     }
@@ -87,16 +80,15 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(
     return file_data;
 }
 
-void File::SetFilePath(const std::filesystem::path &path) { this->path = path; }
-
-void File::SetFileData(const std::vector<char> &data) const {
+void File::SetFileData(const std::filesystem::path &path,
+                       const std::vector<char> &data) {
     if (path.empty()) throw std::runtime_error("file is not valid");
     std::ofstream ofs(path, std::ios::binary | std::ios::app);
     ofs.write(data.data(), data.size());
     ofs.close();
 }
 
-void File::DeleteActualFile() const {
+void File::DeleteActualFile(const std::filesystem::path &path) {
     if (path.empty() || !std::filesystem::exists(path)) {
         throw std::runtime_error("file path is not valid");
     }

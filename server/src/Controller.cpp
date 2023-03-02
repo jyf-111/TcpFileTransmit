@@ -1,5 +1,8 @@
 #include "Controller.h"
+
 #include "Properties.h"
+#include "spdlog/spdlog.h"
+
 
 Controller::Controller() {
     loggerRegister = std::make_shared<LoggerRegister>();
@@ -15,7 +18,6 @@ void Controller::init() {
     const auto& value = Properties::readProperties();
     loggerRegister->setLevel(value["level"].asString());
 }
-
 
 void Controller::run() {
     server->handleAccept();

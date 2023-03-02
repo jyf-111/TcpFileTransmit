@@ -19,6 +19,8 @@ Controller::Controller() {
 void Controller::init() {
     const auto& value = Properties::readProperties();
     this->level = value["level"].asString();
+    loggerRegister->setLevel(level);
+
     this->threads = value["threads"].asLargestUInt();
     if (threads == 0) this->threads = std::thread::hardware_concurrency() - 1;
     this->font = value["font"].asString();
