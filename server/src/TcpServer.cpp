@@ -1,10 +1,10 @@
 #include "TcpServer.h"
 
 #include <spdlog/spdlog.h>
-#include <filesystem>
 
 #include <array>
 #include <cassert>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <variant>
@@ -70,7 +70,8 @@ void TcpServer::handleAccept() {
     serverSession->registerSignal();
 
     acceptor = std::make_unique<asio::ip::tcp::acceptor>(
-        *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
+        *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
+        true);  // NOTE: SO_REUSEADDR
 
     logger->info("waiting connection");
     acceptor->async_accept(

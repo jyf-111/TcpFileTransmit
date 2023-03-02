@@ -6,9 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <type_traits>
-
-#include "json/value.h"
 
 class Properties {
     static std::unique_ptr<Json::Value> root;

@@ -3,11 +3,10 @@
 #include <spdlog/spdlog.h>
 
 #include <sstream>
-#include <stack>
 #include <string>
 
 #include "spdlog/sinks/rotating_file_sink.h"
-#include "spdlog/sinks/wincolor_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 using namespace spdlog;
 
@@ -17,7 +16,7 @@ class LoggerRegister {
     std::shared_ptr<logger> logger;
 
     void initConSoleLogger() {
-        auto sink = std::make_shared<sinks::wincolor_stdout_sink_mt>();
+        auto sink = std::make_shared<sinks::stdout_color_sink_mt>();
         sinks.push_back(sink);
     }
     void initFileLogger() {
