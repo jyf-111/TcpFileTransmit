@@ -12,6 +12,7 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
+#include "ViewModule.h"
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger = spdlog::get("logger");
@@ -108,11 +109,15 @@ void app::TcpClient::handleGet(const std::filesystem::path &path,
     session->enqueue(protoBuf);
 }
 
-void app::TcpClient::handlePost(const std::filesystem::path &path,
-                                const std::vector<std::vector<char>> &data) {
-    const auto lenth = data.size();
+void app::TcpClient::handlePost(const std::filesystem::path &selectPath,
+                                const std::filesystem::path &sendtoPath) {
+    const auto &size =
+        File::GetRemoteFileSize(selectPath.string() + ".sw", dirList);
+    const auto &data = File::GetFileDataSplited(selectPath, size, filesplit);
+
+    const auto &lenth = data.size();
     for (int i = 0; i < lenth; ++i) {
-        ProtoBuf protobuf{ProtoBuf::Method::Post, path, data.at(i)};
+        ProtoBuf protobuf{ProtoBuf::Method::Post, sendtoPath, data.at(i)};
         protobuf.SetIndex(i);
         protobuf.SetTotal(lenth - 1);
         session->enqueue(protobuf);

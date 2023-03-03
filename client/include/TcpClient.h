@@ -58,7 +58,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
     void handleGet(const std::filesystem::path &,
                    const std::filesystem::path &);
     void handlePost(const std::filesystem::path &,
-                    const std::vector<std::vector<char>> &);
+                    const std::filesystem::path &);
     void handleDelete(const std::filesystem::path &);
 
     void ConvertDirStringToList(const std::string &);

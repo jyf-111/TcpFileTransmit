@@ -90,7 +90,8 @@ example:
     "ip" : "127.0.0.1",
     "level" : "debug",
     "port" : 8000,
-    "threads" : 0
+    "threads" : 0,
+    "gaptime": 3000
 }
 ```
 
@@ -107,3 +108,5 @@ log level(debug,info,warn,error,...)
 - threads
 if small than 1, it will be your machine cpu number
 else will be the `threads` number
+- gaptime
+the gap time between each send

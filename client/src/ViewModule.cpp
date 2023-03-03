@@ -239,15 +239,7 @@ void app::ViewModule::render_add_file_window(bool &show_window) {
     ImGui::SameLine();
     if (ImGui::Button("send")) {
         try {
-            // NOTE: transmit file
-            const auto &dirList = client->getDirList();
-            const std::string &path{selectPath};
-            const auto size = File::GetRemoteFileSize(path + ".sw", dirList);
-            const auto filesplitsize = client->getFilesplitsize();
-            const auto &splitedData =
-                File::GetFileDataSplited(selectPath, size, filesplitsize);
-
-            client->handlePost(sendToPath, splitedData);
+            client->handlePost(selectPath, sendToPath);
         } catch (std::exception &e) {
             spdlog::get("logger")->error("{}", e.what());
         }
