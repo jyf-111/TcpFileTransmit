@@ -84,8 +84,6 @@ inline std::ostream &operator<<(std::ostream &os, const ProtoBuf &protoBuf) {
              sizeof(std::size_t));
     os << ProtoBuf::MethodToString(protoBuf.method) + " " +
               protoBuf.path.string() + " ";
-
-    spdlog::get("logger")->debug("send {}", protoBuf.toString());
     const auto &data = protoBuf.GetData();
     os.write(data.data(), data.size());
     return os;
@@ -125,23 +123,117 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
     protoBuf.SetMethod(ProtoBuf::StringToMethod(method));
     protoBuf.SetPath(path);
     protoBuf.SetData(data);
-    spdlog::get("logger")->debug("recv {}", protoBuf.toString());
     return is;
 
 ```
 
 ---
+## doWrite
+```cpp
+std::queue<ProtoBuf> writeQueue;
+
+void ClientSession::doWrite() {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (writeQueue.empty()) {
+        timer->async_wait( [self = shared_from_this()](const asio::error_code &e) {
+            if (e) error("async_wait: {}", e.message());
+                self->timer->expires_after(std::chrono::milliseconds(self->gaptime));
+                self->doWrite();
+            });
+        return;
+    }
+}
+
+// NOTE: buf in doWrite to makesure thread safe
+auto buf = std::make_shared<asio::streambuf>();
+std::ostream os{buf.get()};
+os << writeQueue.front();
+writeQueue.pop();
+asio::async_write(*socketPtr, *buf,
+                    [self = shared_from_this()](const asio::error_code &e,
+                                                std::size_t size) {
+                        if (e) error("async_write: {}", e.message());
+                        self->doWrite();
+                    });
+
+```
+---
+
+## doRead
+
+```cpp
+void ClientSession::doRead() {
+    auto resultBuf = std::make_shared<asio::streambuf>();
+    auto streambuf = std::make_shared<asio::streambuf>();
+    auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
+
+    asio::async_read(*socketPtr, *streambuf, [peek, streambuf, self = shared_from_this()](const asio::system_error &e, 
+                            std::size_t size) -> std::size_t {
+            if (e.code()) return 0;
+            if (size == sizeof(std::size_t)) {
+                std::memcpy(peek.get(), streambuf.get()->data().data(), sizeof(std::size_t));
+            }
+            if (size > sizeof(std::size_t) && size == *reinterpret_cast<std::size_t *>(peek.get())) {
+                return 0;
+            } else {
+                return 1;
+            }
+        },
+        [streambuf, self = shared_from_this()](const asio::error_code &e, std::size_t size) {
+            if (e) {
+                self->client->disconnect();
+                self->client->ipConnect();
+                return;
+            }
+            self->doRead();
+                ...
+                // NOTE hanle read ,do file action ,and push message to queue
+                ...
+        });
+
+```
+
+---
+## client长连接 openssl tls端到端加密
+```cpp
+using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
+asio::ssl::context ssl_context{asio::ssl::context::tls};
+
+void app::TcpClient::ipConnect() {
+    socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
+    session = std::make_shared<ClientSession>(socketPtr, io);
+    session->initClient(shared_from_this());
+    socketPtr->next_layer().async_connect(
+        asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
+        [self = shared_from_this()](const asio::system_error &e) {
+            if (e.code()) {
+                self->timer->async_wait([self](const asio::system_error &e) {
+                    // NOTE: windows 20s linux 127s
+                    self->ipConnect();
+                });
+                return;
+            }
+            self->socketPtr->async_handshake(asio::ssl::stream_base::client, [self](const asio::system_error &e) {
+                    if (e.code()) return;
+                    self->connectFlag = true;
+                    self->session->registerQuery();
+                    self->session->doWrite();
+                    self->session->doRead();
+                });
+        });
+}
+```
+---
 ## 分段传输
 ```cpp
-const std::vector<std::vector<char>> File::GetFileDataSplited(const std::filesystem::path &path, const int &index, const std::size_t &slice) {
+const std::vector<std::vector<char>> File::GetFileDataSplited(const std::filesystem::path &path, 
+                                                    const int &index, const std::size_t &slice) {
     if (path.empty() || !std::filesystem::is_regular_file(path)) {
         throw std::runtime_error("path is empty or is not regular file");
     }
     std::ifstream ifs(path, std::ios::binary);
     ifs.seekg(index);
-
     std::vector<std::vector<char>> file_data;
-
     const auto size = std::filesystem::file_size(path);
 
     while (ifs.tellg() < size) {
@@ -162,43 +254,6 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(const std::filesys
 }
 ```
 
----
-## client长连接 openssl tls端到端加密
-```cpp
-using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
-asio::ssl::context ssl_context{asio::ssl::context::tls};
-
-void app::TcpClient::ipConnect() {
-    socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
-    session = std::make_shared<ClientSession>(socketPtr, io);
-    session->initClient(shared_from_this());
-    logger->info("connectting");
-    socketPtr->next_layer().async_connect(
-        asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
-        [self = shared_from_this()](const asio::system_error &e) {
-            if (e.code()) {
-                self->logger->warn("connect {}:{} failed: {}", self->ip, self->port, e.what());
-                self->timer->async_wait([self](const asio::system_error &e) {
-                    // NOTE: windows 20s linux 127s
-                    self->ipConnect();
-                });
-                return;
-            }
-            self->logger->info("connect {}:{} success ", self->ip, self->port);
-            self->socketPtr->async_handshake(asio::ssl::stream_base::client, [self](const asio::system_error &e) {
-                    if (e.code()) {
-                        self->logger->error("handshake failed: {}", e.what());
-                        return;
-                    }
-                    self->logger->info("handshake success");
-                    self->connectFlag = true;
-                    self->session->registerQuery();
-                    self->session->doWrite();
-                    self->session->doRead();
-                });
-        });
-}
-```
 ---
 
 ## 文件异步保存
@@ -244,7 +299,6 @@ const std::size_t File::GetRemoteFileSize(
         if (std::filesystem::path(filename).filename().string() ==
             path.filename().string()) {
             size = filesize;
-            spdlog::get("logger")->info("has remote swap file size = {}", size);
         }
     }
     return size;
@@ -254,7 +308,6 @@ void app::TcpClient::handleGet(const std::filesystem::path &path, const std::fil
     ProtoBuf protoBuf{ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}};
     const auto tmpFile = savepath.string() + "/" + path.filename().string() + ".sw";
     if (File::FileIsExist(tmpFile)) {
-        logger->info("swap file is exist: {}", tmpFile);
         protoBuf.SetIndex(File::GetFileSize(tmpFile));
     }
     session->enqueue(protoBuf);
