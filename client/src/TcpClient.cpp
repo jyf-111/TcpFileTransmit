@@ -23,10 +23,6 @@ app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     port = value["port"].asLargestUInt();
     filesplit = value["filesplit"].asLargestUInt();
 
-    assert(!domain.empty() || !ip.empty());
-    assert(port != 0);
-    assert(filesplit != 0);
-
     logger->info("domain: {}, ip: {}, port: {}, filesplit: {}", domain, ip,
                  port, filesplit);
 

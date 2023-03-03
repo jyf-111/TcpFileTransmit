@@ -23,6 +23,7 @@ class ClientSession : public std::enable_shared_from_this<ClientSession> {
     std::unique_ptr<asio::io_context::strand> fileWriteStrand;
     std::shared_ptr<app::TcpClient> client;
     std::mutex mtx;
+    std::size_t gaptime;
 
    public:
     ClientSession(std::shared_ptr<ssl_socket> socketPtr,

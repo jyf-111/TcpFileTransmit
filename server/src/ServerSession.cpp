@@ -21,7 +21,6 @@ ServerSession::ServerSession(std::shared_ptr<ssl_socket> socketPtr,
     filesplit = value["filesplit"].asLargestUInt();
 
     logger->info("filesplit: {}", filesplit);
-    assert(filesplit > 0);
 }
 
 void ServerSession::enqueue(const ProtoBuf& buf) {

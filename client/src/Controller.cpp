@@ -24,9 +24,6 @@ void Controller::init() {
     this->threads = value["threads"].asLargestUInt();
     if (threads == 0) this->threads = std::thread::hardware_concurrency() - 1;
     this->font = value["font"].asString();
-    assert(!level.empty());
-    assert(threads > 0);
-    assert(!font.empty());
 
     logger->info("level: {} threads: {} font: {}", level, threads, font);
 

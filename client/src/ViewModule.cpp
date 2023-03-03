@@ -83,15 +83,13 @@ void app::ViewModule::render_query_window(bool &show_window) {
                              IM_ARRAYSIZE(queryPath));
     ImGui::Separator();
 
+    if (strlen(queryPath) > 1 && queryPath[1] == '\\') queryPath[1] = '/';
     if (ImGui::Button("上层目录")) {
-        std::string_view s{std::begin(queryPath),
-                           std::begin(queryPath) + std::strlen(queryPath) - 1};
+        std::string s{std::begin(queryPath),
+                      std::begin(queryPath) + std::strlen(queryPath) - 1};
         if (s.size() >= 1) {
-#ifdef _WIN32
-            s = s.substr(0, s.find_last_of('\\'));
-#else
             s = s.substr(0, s.find_last_of('/'));
-#endif
+            std::memset(queryPath, 0, sizeof(queryPath));
             std::copy(s.begin(), s.end(), std::begin(queryPath));
             queryPath[s.size()] = '\0';
         }

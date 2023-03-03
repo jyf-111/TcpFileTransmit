@@ -45,10 +45,6 @@ void TcpServer::init() {
     certificate = value["certificate"].asString();
     privatekey = value["privatekey"].asString();
 
-    assert(!ip.empty());
-    assert(port >= 0);
-    assert(threads > 0);
-
     logger->info(
         "ip:{} port:{} threads:{} certificate: "
         "{} privatekey: {}",

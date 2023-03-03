@@ -6,8 +6,8 @@
 #include <queue>
 
 #include "File.h"
+#include "Properties.h"
 #include "TcpClient.h"
-#include "asio/steady_timer.hpp"
 
 ClientSession::ClientSession(std::shared_ptr<ssl_socket> socketPtr,
                              std::shared_ptr<asio::io_context> io)
@@ -17,6 +17,11 @@ ClientSession::ClientSession(std::shared_ptr<ssl_socket> socketPtr,
     fileWriteStrand = std::make_unique<asio::io_context::strand>(*io);
     logger = spdlog::get("logger");
     assert(logger);
+
+    const auto &value = Properties::readProperties();
+    gaptime = value["gaptime"].asLargestInt();
+
+    logger->info("gaptime: {}", gaptime);
 }
 
 void ClientSession::initClient(std::weak_ptr<app::TcpClient> client) {
@@ -34,7 +39,8 @@ void ClientSession::registerQuery() {
         }
         self->enqueue({ProtoBuf::Method::Query, self->client->getqueryPath(),
                        std::vector<char>{'n', 'u', 'l', 'l'}});
-        self->queryTimer->expires_from_now(std::chrono::seconds(1));
+        self->queryTimer->expires_from_now(
+            std::chrono::milliseconds(self->gaptime));
         self->registerQuery();
     });
 }
@@ -134,7 +140,8 @@ void ClientSession::doWrite() {
         timer->async_wait(
             [self = shared_from_this()](const asio::error_code &e) {
                 if (e) error("async_wait: {}", e.message());
-                self->timer->expires_after(std::chrono::seconds(3));
+                self->timer->expires_after(
+                    std::chrono::milliseconds(self->gaptime));
                 self->doWrite();
             });
         return;
