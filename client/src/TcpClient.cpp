@@ -111,17 +111,20 @@ void app::TcpClient::handleGet(const std::filesystem::path &path,
 
 void app::TcpClient::handlePost(const std::filesystem::path &selectPath,
                                 const std::filesystem::path &sendtoPath) {
-    const auto &size =
-        File::GetRemoteFileSize(selectPath.string() + ".sw", dirList);
-    const auto &data = File::GetFileDataSplited(selectPath, size, filesplit);
+    io->post([selectPath, sendtoPath, self = shared_from_this()]() {
+        const auto &size =
+            File::GetRemoteFileSize(selectPath.string() + ".sw", self->dirList);
+        const auto &data =
+            File::GetFileDataSplited(selectPath, size, self->filesplit);
 
-    const auto &lenth = data.size();
-    for (int i = 0; i < lenth; ++i) {
-        ProtoBuf protobuf{ProtoBuf::Method::Post, sendtoPath, data.at(i)};
-        protobuf.SetIndex(i);
-        protobuf.SetTotal(lenth - 1);
-        session->enqueue(protobuf);
-    }
+        const auto &lenth = data.size();
+        for (int i = 0; i < lenth; ++i) {
+            ProtoBuf protobuf{ProtoBuf::Method::Post, sendtoPath, data.at(i)};
+            protobuf.SetIndex(i);
+            protobuf.SetTotal(lenth - 1);
+            self->session->enqueue(protobuf);
+        }
+    });
 }
 
 void app::TcpClient::handleDelete(const std::filesystem::path &path) {

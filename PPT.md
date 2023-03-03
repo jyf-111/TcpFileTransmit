@@ -1,28 +1,33 @@
 ---
 marp: true
+theme: default
+paginate: true
 ---
+<!-- 
+class: lead
+-->
 
-## TcpFileTransmit
+## [TcpFileTransmit](https://github.com/jyf-111/TcpFileTransmit)
 - C++20
-- 构建工具: xmake
-- 网络: asio
-- 加密: openssl
-- 日志: spdlog
-- json: jsoncpp
-- 测试: gtest
+- 构建工具: [xmake](https://github.com/xmake-io/xmake)
+- 网络: [asio](https://github.com/chriskohlhoff/asio)
+- 加密: [openssl](https://github.com/openssl/openssl)
+- 日志: [spdlog](https://github.com/gabime/spdlog)
+- json: [jsoncpp](https://github.com/open-source-parsers/jsoncpp)
+- 测试: [gtest](https://github.com/google/googletest)
     - ui:
-        - imgui
-        - glew
+        - [imgui](https://github.com/ocornut/imgui/)
+        - [glew](https://github.com/nigels-com/glew)
 ---
 ## asio网络 任务调度
 ```cpp
-std::shared_ptr<asio::io_service> io;
-io = std::make_shared<asio::io_context>();
+auto io = std::make_shared<asio::io_context>();
+auto fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
 
 socket->asyncwrite ...
 socket->asyncread ...
-io.post(...)
-strand.post(...)
+io->post(...)
+strand->post(...)
 
 std::thread([this]() {
     asio::thread_pool threadPool(threads);
@@ -32,7 +37,7 @@ std::thread([this]() {
     threadPool.join();
 }).detach();
 ...
-//imgui ui
+// imgui ui
 ...
 ```
 
@@ -154,10 +159,11 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(const std::filesys
     }
     ifs.close();
     return file_data;
+}
 ```
 
 ---
-## client长连接 端到端加密
+## client长连接 openssl tls端到端加密
 ```cpp
 using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
 asio::ssl::context ssl_context{asio::ssl::context::tls};
@@ -166,18 +172,14 @@ void app::TcpClient::ipConnect() {
     socketPtr = std::make_shared<ssl_socket>(*io, ssl_context);
     session = std::make_shared<ClientSession>(socketPtr, io);
     session->initClient(shared_from_this());
-
     logger->info("connectting");
-
     socketPtr->next_layer().async_connect(
         asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
         [self = shared_from_this()](const asio::system_error &e) {
             if (e.code()) {
                 self->logger->warn("connect {}:{} failed: {}", self->ip, self->port, e.what());
                 self->timer->async_wait([self](const asio::system_error &e) {
-                    // NOTE:
-                    // windows 20s
-                    // linux 127s
+                    // NOTE: windows 20s linux 127s
                     self->ipConnect();
                 });
                 return;
@@ -208,6 +210,23 @@ self->fileWriteStrand->post([self, protoBuf]() {
 });
 
 ```
+## 文件异步读取
+```cpp
+io->post([selectPath, sendtoPath, self = shared_from_this()]() {
+    const auto &size = File::GetRemoteFileSize(selectPath.string() + ".sw", self->dirList);
+    const auto &data = File::GetFileDataSplited(selectPath, size, self->filesplit);
+
+    const auto &lenth = data.size();
+    for (int i = 0; i < lenth; ++i) {
+        ProtoBuf protobuf{ProtoBuf::Method::Post, sendtoPath, data.at(i)};
+        protobuf.SetIndex(i);
+        protobuf.SetTotal(lenth - 1);
+        self->session->enqueue(protobuf);
+    }
+    });
+```
+---
+
 ## 多用户文件保护
 - 文件在保存时候 保存为`{filename}.sw`
 - 传输完毕后再重命名为`{filename}`
@@ -216,7 +235,6 @@ self->fileWriteStrand->post([self, protoBuf]() {
 
 ## 断点续传
 
-## 客户端获取服务端目录下的swap文件
 ```cpp
 const std::size_t File::GetRemoteFileSize(
     const std::filesystem::path &path,
@@ -231,20 +249,14 @@ const std::size_t File::GetRemoteFileSize(
     }
     return size;
 }
-```
-```cpp
-if (ImGui::Button("send")) {
-        try {
-            // NOTE: transmit file
-            const auto &dirList = client->getDirList();
-            const std::string &path{selectPath};
-            const auto size = File::GetRemoteFileSize(path + ".sw", dirList);
-            const auto filesplitsize = client->getFilesplitsize();
-            const auto &splitedData = File::GetFileDataSplited(selectPath, size,filesplitsize);
 
-            client->handlePost(sendToPath, splitedData);
-        } catch (std::exception &e) {
-            spdlog::get("logger")->error("{}", e.what());
-        }
+void app::TcpClient::handleGet(const std::filesystem::path &path, const std::filesystem::path &savepath) {
+    ProtoBuf protoBuf{ProtoBuf::Method::Get, path, std::vector<char>{'n', 'u', 'l', 'l'}};
+    const auto tmpFile = savepath.string() + "/" + path.filename().string() + ".sw";
+    if (File::FileIsExist(tmpFile)) {
+        logger->info("swap file is exist: {}", tmpFile);
+        protoBuf.SetIndex(File::GetFileSize(tmpFile));
+    }
+    session->enqueue(protoBuf);
 }
 ```
