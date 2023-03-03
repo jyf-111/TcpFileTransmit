@@ -61,6 +61,9 @@ void TcpServer::init() {
     ssl_context.set_verify_mode(1);
     ssl_context.use_certificate_file(certificate, asio::ssl::context::pem);
     ssl_context.use_private_key_file(privatekey, asio::ssl::context::pem);
+
+    acceptor = std::make_unique<asio::ip::tcp::acceptor>(
+        *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port));
 }
 
 void TcpServer::handleAccept() {
@@ -68,10 +71,6 @@ void TcpServer::handleAccept() {
     auto serverSession = std::make_shared<ServerSession>(socketPtr, io);
 
     serverSession->registerSignal();
-
-    acceptor = std::make_unique<asio::ip::tcp::acceptor>(
-        *io, asio::ip::tcp::endpoint(asio::ip::address::from_string(ip), port),
-        true);  // NOTE: SO_REUSEADDR
 
     logger->info("waiting connection");
     acceptor->async_accept(

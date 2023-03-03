@@ -1,5 +1,6 @@
 add_rules("mode.debug", "mode.release")
 set_languages("c99", "c++20")
+add_cxxflags("-fpermissive")
 
 add_requires("asio")
 add_requires("spdlog")

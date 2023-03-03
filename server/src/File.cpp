@@ -9,7 +9,14 @@
 #include <vector>
 
 const std::size_t File::GetFileSize(const std::filesystem::path &path) {
-    return std::filesystem::file_size(path);
+#ifdef _WIN32
+    if (std::filesystem::is_directory(path))
+        return std::filesystem::file_size(path);
+#endif
+    if (std::filesystem::is_directory(path))
+        return 4096;
+    else
+        return std::filesystem::file_size(path);
 }
 
 const bool File::FileIsExist(const std::filesystem::path &path) {
@@ -42,11 +49,11 @@ const std::string File::QueryDirectory(const std::filesystem::path &path) {
     std::string tmp;
     for (const auto &p : std::filesystem::directory_iterator(path)) {
         if (p.is_directory())
-            tmp += p.path().string() + "\\ " +
-                   std::to_string(std::filesystem::file_size(p.path())) + "\n";
+            tmp += p.path().string() + "/ " +
+                   std::to_string(GetFileSize(p.path())) + "\n";
         else
             tmp += p.path().string() + " " +
-                   std::to_string(std::filesystem::file_size(p.path())) + "\n";
+                   std::to_string(GetFileSize(p.path())) + "\n";
     }
     return tmp;
 }

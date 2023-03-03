@@ -87,7 +87,11 @@ void app::ViewModule::render_query_window(bool &show_window) {
         std::string_view s{std::begin(queryPath),
                            std::begin(queryPath) + std::strlen(queryPath) - 1};
         if (s.size() >= 1) {
+#ifdef _WIN32
             s = s.substr(0, s.find_last_of('\\'));
+#else
+            s = s.substr(0, s.find_last_of('/'));
+#endif
             std::copy(s.begin(), s.end(), std::begin(queryPath));
             queryPath[s.size()] = '\0';
         }
@@ -110,7 +114,7 @@ void app::ViewModule::render_query_window(bool &show_window) {
         for (const auto &[filename, filesize] : res) {
             ImGui::TableNextColumn();
             if (ImGui::Selectable(filename.c_str())) {
-                if (*filename.rbegin() == '\\') {
+                if (*filename.rbegin() == '/') {
                     // is dir
                     std::memset(std::begin(queryPath), 0,
                                 std::strlen(queryPath));
