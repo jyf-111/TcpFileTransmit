@@ -106,8 +106,9 @@ void app::view::init(std::weak_ptr<Controller> controller,
 // Freetype for higher quality font rendering.
 #define IMGUI_ENABLE_FREETYPE
     // io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF(font.c_str(), 30.0f, nullptr,
-                                 io.Fonts->GetGlyphRangesChineseFull());
+    io.Fonts->AddFontFromFileTTF(
+        font.c_str(), 30.0f, nullptr,
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
     io.Fonts->Build();
 }
 

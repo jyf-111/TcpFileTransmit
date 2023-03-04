@@ -27,7 +27,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<spdlog::logger> logger;
-    std::shared_ptr<asio::io_service> io;
+    std::shared_ptr<asio::io_context> io;
     std::unique_ptr<asio::steady_timer> timer;
     std::unique_ptr<asio::ip::tcp::resolver> resolver;
     std::shared_ptr<ssl_socket> socketPtr;
