@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "Properties.h"
+#include "asio/system_error.hpp"
 
 Controller::Controller() {
     loggerRegister = std::make_shared<LoggerRegister>();
@@ -37,7 +38,13 @@ void Controller::run() {
     std::thread([this]() {
         asio::thread_pool threadPool(threads);
         for (int i = 0; i < threads - 1; i++) {
-            asio::post(threadPool, [this]() { io->run(); });
+            asio::post(threadPool, [this]() {
+                try {
+                    io->run();
+                } catch (const asio::system_error& e) {
+                    logger->error(e.what());
+                }
+            });
         }
         threadPool.join();
     }).detach();

@@ -9,23 +9,23 @@
 ServerSession::ServerSession(std::shared_ptr<ssl_socket> socketPtr,
                              std::shared_ptr<asio::io_context> io)
     : socketPtr(std::move(socketPtr)), io(io) {
-    timer = std::make_shared<asio::steady_timer>(
-        *io, std::chrono::milliseconds(500));
-    fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
-    sig = std::make_shared<asio::signal_set>(*io, SIGINT, SIGTERM);
-
     logger = spdlog::get("logger");
     assert(logger);
 
     const auto& value = Properties::readProperties();
     filesplit = value["filesplit"].asLargestUInt();
+    gaptime = value["gaptime"].asLargestUInt();
 
-    logger->info("filesplit: {}", filesplit);
+    timer = std::make_shared<asio::steady_timer>(
+        *io, std::chrono::milliseconds(gaptime));
+    fileWriteStrand = std::make_shared<asio::io_context::strand>(*io);
+    sig = std::make_shared<asio::signal_set>(*io, SIGINT, SIGTERM);
+    logger->info("filesplit: {} gaptime: {}", filesplit, gaptime);
 }
 
 void ServerSession::enqueue(const ProtoBuf& buf) {
     std::lock_guard<std::mutex> lock(mtx);
-    writeQueue.push(buf);
+    writeQueue.push(std::move(buf));
 }
 
 void ServerSession::handleCloseSocket() {
@@ -35,6 +35,7 @@ void ServerSession::handleCloseSocket() {
                 self->logger->error(e.message());
             }
             self->socketPtr->lowest_layer().close();
+            // clear
             std::queue<ProtoBuf> tmp;
             tmp.swap(self->writeQueue);
         });
@@ -48,7 +49,7 @@ void ServerSession::doRead() {
     asio::async_read(
         *socketPtr, *streambuf,
         [peek, streambuf](const asio::system_error& e,
-                          std::size_t size) -> std::size_t {
+                          const std::size_t& size) -> const std::size_t {
             if (e.code()) {
                 error("async_reading: {}", e.what());
                 return 0;
@@ -65,7 +66,7 @@ void ServerSession::doRead() {
             }
         },
         [streambuf, self = shared_from_this()](const asio::error_code& e,
-                                               std::size_t size) {
+                                               const std::size_t& size) {
             if (e) {
                 self->handleCloseSocket();
                 error("async_read: {}", e.message());
@@ -81,7 +82,7 @@ void ServerSession::doRead() {
             try {
                 std::istream is(streambuf.get());
                 is >> recv;
-                result = self->handleFileAction(recv);
+                result = self->handleProtobufAction(recv);
             } catch (const std::exception& e) {
                 error(e.what());
                 result = std::string(e.what());
@@ -111,11 +112,11 @@ void ServerSession::doRead() {
         });
 }
 
-auto ServerSession::handleFileAction(ProtoBuf& protoBuf)
-    -> std::variant<std::string, std::vector<std::vector<char>>> {
-    auto method = protoBuf.GetMethod();
-    auto path = protoBuf.GetPath();
-    auto data = protoBuf.GetData();
+auto ServerSession::handleProtobufAction(ProtoBuf& protoBuf)
+    -> const std::variant<std::string, std::vector<std::vector<char>>> {
+    const auto& method = protoBuf.GetMethod();
+    const auto& path = protoBuf.GetPath();
+    const auto& data = protoBuf.GetData();
 
     switch (method) {
         case ProtoBuf::Method::Query: {
@@ -129,8 +130,8 @@ auto ServerSession::handleFileAction(ProtoBuf& protoBuf)
             fileWriteStrand->post([path, data] {
                 File::SetFileData(path.string() + ".sw", data);
             });
-            auto index = protoBuf.GetIndex();
-            auto total = protoBuf.GetTotal();
+            const auto& index = protoBuf.GetIndex();
+            const auto& total = protoBuf.GetTotal();
             if (index < total) {
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total);
@@ -140,7 +141,7 @@ auto ServerSession::handleFileAction(ProtoBuf& protoBuf)
                 return "server saving file : " + std::to_string(index) + "/" +
                        std::to_string(total) + " OK";
             } else {
-                error("index > total");
+                logger->error("index > total");
                 return "error: index > total";
             }
         }
@@ -160,7 +161,8 @@ void ServerSession::doWrite() {
         timer->async_wait(
             [self = shared_from_this()](const asio::error_code& e) {
                 if (e) error("async_wait: {}", e.message());
-                self->timer->expires_after(std::chrono::seconds(1));
+                self->timer->expires_after(
+                    std::chrono::milliseconds(self->gaptime));
                 self->doWrite();
             });
         return;
@@ -173,7 +175,7 @@ void ServerSession::doWrite() {
     writeQueue.pop();
     asio::async_write(*socketPtr, *buf,
                       [self = shared_from_this()](const asio::error_code& e,
-                                                  std::size_t size) {
+                                                  const std::size_t& size) {
                           if (e) error("async_write: {}", e.message());
                           self->doWrite();
                       });

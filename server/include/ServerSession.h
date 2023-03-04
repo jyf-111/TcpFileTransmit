@@ -24,6 +24,7 @@ class ServerSession : public std::enable_shared_from_this<ServerSession> {
     std::mutex mtx;
     std::shared_ptr<asio::io_context::strand> fileWriteStrand;
     std::size_t filesplit;
+    std::size_t gaptime;
 
    public:
     ServerSession(std::shared_ptr<ssl_socket> socketPtr,
@@ -32,8 +33,8 @@ class ServerSession : public std::enable_shared_from_this<ServerSession> {
     void enqueue(const ProtoBuf& buf);
 
     void handleCloseSocket();
-    auto handleFileAction(ProtoBuf& protoBuf)
-        -> std::variant<std::string, std::vector<std::vector<char>>>;
+    auto handleProtobufAction(ProtoBuf& protoBuf)
+        -> const std::variant<std::string, std::vector<std::vector<char>>>;
 
     void doWrite();
     void doRead();

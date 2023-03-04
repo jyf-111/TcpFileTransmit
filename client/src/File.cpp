@@ -68,20 +68,19 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(
     ifs.seekg(index);
 
     std::vector<std::vector<char>> file_data;
-
-    const auto size = std::filesystem::file_size(path);
+    const auto &size = File::GetFileSize(path);
 
     while (ifs.tellg() < size) {
         if (ifs.tellg() + static_cast<std::ios::pos_type>(slice) >= size) {
-            const auto s = size - ifs.tellg();
+            const auto &s = size - ifs.tellg();
             std::vector<char> data(s);
             ifs.read(data.data(), s);
-            file_data.push_back(data);
+            file_data.push_back(std::move(data));
             break;
         } else {
             std::vector<char> data(slice);
             ifs.read(data.data(), slice);
-            file_data.push_back(data);
+            file_data.push_back(std::move(data));
         }
     }
     ifs.close();

@@ -8,6 +8,7 @@
 #include "File.h"
 #include "Properties.h"
 #include "TcpClient.h"
+#include "asio/error_code.hpp"
 
 ClientSession::ClientSession(std::shared_ptr<ssl_socket> socketPtr,
                              std::shared_ptr<asio::io_context> io)
@@ -29,20 +30,35 @@ void ClientSession::initClient(std::weak_ptr<app::TcpClient> client) {
     assert(this->client);
 }
 
+bool ClientSession::queryIsEmpty() {
+    std::lock_guard<std::mutex> lock(mtx);
+    return writeQueue.empty();
+}
+
+const ProtoBuf ClientSession::popQueryFront() {
+    std::lock_guard<std::mutex> lock(mtx);
+    const auto query = writeQueue.front();
+    writeQueue.pop();
+    return query;
+}
+
 void ClientSession::registerQuery() {
     if (client->isConnected() == false) return;
-    queryTimer->async_wait([self =
-                                shared_from_this()](const asio::error_code &e) {
-        if (e) {
-            self->logger->error("{}", e.message());
-            return;
-        }
-        self->enqueue({ProtoBuf::Method::Query, self->client->getqueryPath(),
-                       std::vector<char>{'n', 'u', 'l', 'l'}});
-        self->queryTimer->expires_from_now(
-            std::chrono::milliseconds(self->gaptime));
-        self->registerQuery();
-    });
+    queryTimer->async_wait(
+        [self = shared_from_this()](const asio::error_code &e) {
+            if (e) {
+                self->logger->error("{}", e.message());
+                return;
+            }
+            if (self->writeQueue.empty()) {
+                self->enqueue({ProtoBuf::Method::Query,
+                               self->client->getqueryPath(),
+                               std::vector<char>{'n', 'u', 'l', 'l'}});
+            }
+            self->queryTimer->expires_from_now(
+                std::chrono::milliseconds(self->gaptime));
+            self->registerQuery();
+        });
 }
 
 void ClientSession::enqueue(const ProtoBuf &buf) {
@@ -135,8 +151,7 @@ void ClientSession::doRead() {
 }
 
 void ClientSession::doWrite() {
-    std::lock_guard<std::mutex> lock(mtx);
-    if (writeQueue.empty()) {
+    if (queryIsEmpty()) {
         timer->async_wait(
             [self = shared_from_this()](const asio::error_code &e) {
                 if (e) error("async_wait: {}", e.message());
@@ -150,12 +165,15 @@ void ClientSession::doWrite() {
     // NOTE: buf in doWrite to makesure thread safe
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os{buf.get()};
-    os << writeQueue.front();
-    writeQueue.pop();
-    asio::async_write(*socketPtr, *buf,
-                      [self = shared_from_this()](const asio::error_code &e,
-                                                  std::size_t size) {
-                          if (e) error("async_write: {}", e.message());
-                          self->doWrite();
-                      });
+    os << popQueryFront();
+    asio::async_write(
+        *socketPtr, *buf,
+        [self = shared_from_this()](const asio::error_code &e,
+                                    std::size_t size) {
+            if (e) error("async_write: {}", e.message());
+            self->timer->async_wait([self](const asio::error_code &) {
+                self->timer->expires_after(std::chrono::milliseconds(40));
+                self->doWrite();
+            });
+        });
 }

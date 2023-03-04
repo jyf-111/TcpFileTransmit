@@ -234,19 +234,19 @@ const std::vector<std::vector<char>> File::GetFileDataSplited(const std::filesys
     std::ifstream ifs(path, std::ios::binary);
     ifs.seekg(index);
     std::vector<std::vector<char>> file_data;
-    const auto size = std::filesystem::file_size(path);
+    const auto size = File::GetFileSize(path);
 
     while (ifs.tellg() < size) {
         if (ifs.tellg() + static_cast<std::ios::pos_type>(slice) >= size) {
             const auto s = size - ifs.tellg();
             std::vector<char> data(s);
             ifs.read(data.data(), s);
-            file_data.push_back(data);
+            file_data.push_back(std::move(data));
             break;
         } else {
             std::vector<char> data(slice);
             ifs.read(data.data(), slice);
-            file_data.push_back(data);
+            file_data.push_back(std::move(data));
         }
     }
     ifs.close();
@@ -313,3 +313,16 @@ void app::TcpClient::handleGet(const std::filesystem::path &path, const std::fil
     session->enqueue(protoBuf);
 }
 ```
+
+---
+
+## 遇到的问题
+- 有些异步操作需要strand序列化
+- [openssl error: bad record MAC](https://blog.csdn.net/gufachongyang02/article/details/52154124)
+1. 服务端的问题：a. 服务端tcp或mina缓冲区处理问题（缓冲区满，被覆盖），b.mina对某session的分组报文的接收不完整问题（半包）； c.服务端的TLS处理存在问题；
+2. 客户端问题：a.连续请求时，客户端的缓冲区问题；客户端TLS的处理存在问题；
+3. 其它（网络原因造成的丢包等）
+
+- linux bind error
+
+- linux 不能获取目录大小

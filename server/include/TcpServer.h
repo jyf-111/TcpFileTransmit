@@ -1,5 +1,7 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 #include <csignal>
@@ -7,7 +9,6 @@
 #include <variant>
 #include <vector>
 
-#include "ProtoBuf.h"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer> {
     std::shared_ptr<spdlog::logger> logger;
@@ -22,9 +23,6 @@ class TcpServer : public std::enable_shared_from_this<TcpServer> {
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
     std::shared_ptr<asio::io_context> io;
     std::unique_ptr<asio::ip::tcp::acceptor> acceptor;
-
-    auto handleFileAction(ProtoBuf &)
-        -> std::variant<std::string, std::vector<std::vector<char>>>;
 
    public:
     TcpServer();

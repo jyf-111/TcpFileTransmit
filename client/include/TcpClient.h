@@ -37,22 +37,22 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
    public:
     TcpClient(std::shared_ptr<asio::io_context> io);
     std::shared_ptr<asio::io_context> getIoContext();
-    [[nodiscard]] std::string getIp() const;
+    [[nodiscard]] const std::string& getIp() const;
     void setIp(const std::string &);
-    [[nodiscard]] std::string getDomain() const;
+    [[nodiscard]] const std::string& getDomain() const;
     void setDomain(const std::string &);
-    [[nodiscard]] std::size_t getPort() const;
+    [[nodiscard]] const std::size_t& getPort() const;
     void setPort(const std::size_t &);
-    [[nodiscard]] std::size_t getFilesplitsize() const;
+    [[nodiscard]] const std::size_t& getFilesplitsize() const;
     void setFilesplit(const std::size_t &);
-    void setDirList(
-        const std::vector<std::pair<std::string, std::size_t>> &dir);
     [[nodiscard]] const std::vector<std::pair<std::string, std::size_t>>
         &getDirList();
+    void setDirList(
+        const std::vector<std::pair<std::string, std::size_t>> &dir);
+    [[nodiscard]] const std::string& getSavePath();
     void setSavePath(const std::string &savePath);
-    [[nodiscard]] const std::string getSavePath();
-    void setqueryPath(const std::filesystem::path &);
     [[nodiscard]] const std::filesystem::path &getqueryPath();
+    void setqueryPath(const std::filesystem::path &);
 
     void handleQuery(const std::filesystem::path &);
     void handleGet(const std::filesystem::path &,

@@ -3,7 +3,6 @@
 #include "Properties.h"
 #include "spdlog/spdlog.h"
 
-
 Controller::Controller() {
     loggerRegister = std::make_shared<LoggerRegister>();
     logger = spdlog::get("logger");

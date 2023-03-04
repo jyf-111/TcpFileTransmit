@@ -25,6 +25,9 @@ class ClientSession : public std::enable_shared_from_this<ClientSession> {
     std::mutex mtx;
     std::size_t gaptime;
 
+    bool queryIsEmpty();
+    const ProtoBuf popQueryFront();
+
    public:
     ClientSession(std::shared_ptr<ssl_socket> socketPtr,
                   std::shared_ptr<asio::io_context> io);

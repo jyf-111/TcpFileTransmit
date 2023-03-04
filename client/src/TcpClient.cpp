@@ -12,7 +12,6 @@
 #include "File.h"
 #include "Properties.h"
 #include "ProtoBuf.h"
-#include "ViewModule.h"
 
 app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
     logger = spdlog::get("logger");
@@ -33,29 +32,26 @@ app::TcpClient::TcpClient(std::shared_ptr<asio::io_context> io) : io(io) {
 
 std::shared_ptr<asio::io_context> app::TcpClient::getIoContext() { return io; }
 
-std::string app::TcpClient::getIp() const { return ip; }
+const std::string &app::TcpClient::getIp() const { return ip; }
 
-void app::TcpClient::setIp(const std::string &ip) { this->ip = ip; }
+void app::TcpClient::setIp(const std::string &ip) { this->ip = std::move(ip); }
 
-std::string app::TcpClient::getDomain() const { return this->domain; }
+const std::string &app::TcpClient::getDomain() const { return this->domain; }
 
 void app::TcpClient::setDomain(const std::string &domain) {
-    this->domain = domain;
+    this->domain = std::move(domain);
 }
 
-std::size_t app::TcpClient::getPort() const { return port; }
+const std::size_t &app::TcpClient::getPort() const { return port; }
 
 void app::TcpClient::setPort(const std::size_t &port) { this->port = port; }
 
-void app::TcpClient::setFilesplit(const std::size_t &size) {
-    this->filesplit = size;
+const std::size_t &app::TcpClient::getFilesplitsize() const {
+    return filesplit;
 }
 
-std::size_t app::TcpClient::getFilesplitsize() const { return filesplit; }
-
-void app::TcpClient::setDirList(
-    const std::vector<std::pair<std::string, std::size_t>> &dir) {
-    this->dirList = std::move(dir);
+void app::TcpClient::setFilesplit(const std::size_t &size) {
+    this->filesplit = size;
 }
 
 const std::vector<std::pair<std::string, std::size_t>>
@@ -63,8 +59,13 @@ const std::vector<std::pair<std::string, std::size_t>>
     return dirList;
 }
 
+void app::TcpClient::setDirList(
+    const std::vector<std::pair<std::string, std::size_t>> &dir) {
+    this->dirList = std::move(dir);
+}
+
 void app::TcpClient::setqueryPath(const std::filesystem::path &selectPath) {
-    this->queryPath = selectPath;
+    this->queryPath = std::move(selectPath);
 }
 
 [[nodiscard]] const std::filesystem::path &app::TcpClient::getqueryPath() {
@@ -74,33 +75,30 @@ void app::TcpClient::setqueryPath(const std::filesystem::path &selectPath) {
 void app::TcpClient::clearDirList() { dirList.clear(); }
 
 void app::TcpClient::setSavePath(const std::string &savePath) {
-    this->savePath = savePath;
+    this->savePath = std::move(savePath);
 }
 
-const std::string app::TcpClient::getSavePath() { return savePath; }
+const std::string &app::TcpClient::getSavePath() { return savePath; }
 
 void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
     std::stringstream ss(dir);
-    std::string item;
-    int i = 0;
-    while (std::getline(ss, item, '\n')) {
-        std::stringstream ss{item};
-        std::string filename;
-        std::size_t filesize;
-        ss >> filename >> filesize;
-        this->dirList.emplace_back(filename, filesize);
+
+    std::string filename;
+    std::size_t filesize;
+    while (ss >> filename >> filesize) {
+        this->dirList.emplace_back(std::move(filename), filesize);
     };
 }
 
 void app::TcpClient::handleQuery(const std::filesystem::path &path) {
-    queryPath = path;
+    queryPath = std::move(path);
 }
 
 void app::TcpClient::handleGet(const std::filesystem::path &path,
                                const std::filesystem::path &savepath) {
     ProtoBuf protoBuf{ProtoBuf::Method::Get, path,
                       std::vector<char>{'n', 'u', 'l', 'l'}};
-    const auto tmpFile =
+    const auto &tmpFile =
         savepath.string() + "/" + path.filename().string() + ".sw";
     if (File::FileIsExist(tmpFile)) {
         logger->info("swap file is exist: {}", tmpFile);

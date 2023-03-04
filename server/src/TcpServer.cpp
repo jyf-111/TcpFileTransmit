@@ -112,7 +112,7 @@ void TcpServer::setCertificate(const std::string& certificate) {
 }
 
 [[nodiscard]] std::string TcpServer::getPrivateKey() const {
-    return privatekey;
+    return this->privatekey;
 }
 
 void TcpServer::setPrivateKey(const std::string& private_key) {
