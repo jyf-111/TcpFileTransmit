@@ -176,7 +176,9 @@ void ServerSession::doWrite() {
     asio::async_write(*socketPtr, *buf,
                       [self = shared_from_this()](const asio::error_code& e,
                                                   const std::size_t& size) {
-                          if (e) error("async_write: {}", e.message());
+                          if (e)
+                              self->logger->error("async_write: {}",
+                                                  e.message());
                           self->doWrite();
                       });
 }

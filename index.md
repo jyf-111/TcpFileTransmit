@@ -19,6 +19,33 @@ class: lead
         - [imgui](https://github.com/ocornut/imgui/)
         - [glew](https://github.com/nigels-com/glew)
 ---
+## 结构
+```bash
+TcpFileTransmit/
+│  xmake.lua
+├─client
+│  │  xmake.lua
+│  ├─3rdparty
+│  │  └─ImGuiFileDialog
+│  ├─include
+│  │      TcpClient.h
+│  │      ...
+│  └─src
+│         TcpClient.cpp
+│         ...
+├─server
+│  │  xmake.lua
+│  ├─include
+│  │      TcpServer.h
+│  │      ...
+│  └─src
+│         TcpServer.cpp
+│         ...
+└─test
+        test.cpp
+        xmake.lua
+```
+---
 ## asio网络 任务调度
 ```cpp
 auto io = std::make_shared<asio::io_context>();
@@ -133,29 +160,25 @@ inline std::istream &operator>>(std::istream &is, ProtoBuf &protoBuf) {
 std::queue<ProtoBuf> writeQueue;
 
 void ClientSession::doWrite() {
-    std::lock_guard<std::mutex> lock(mtx);
-    if (writeQueue.empty()) {
-        timer->async_wait( [self = shared_from_this()](const asio::error_code &e) {
-            if (e) error("async_wait: {}", e.message());
+    if (queryIsEmpty()) {
+        timer->async_wait(
+            [self = shared_from_this()](const asio::error_code &e) {
+                if (e) self->logger->error("async_wait: {}", e.message());
                 self->timer->expires_after(std::chrono::milliseconds(self->gaptime));
                 self->doWrite();
             });
         return;
     }
+    auto buf = std::make_shared<asio::streambuf>();
+    std::ostream os{buf.get()};
+    os << popQueryFront();
+    asio::async_write(*socketPtr, *buf,
+                      [self = shared_from_this()](const asio::error_code &e,
+                                                  std::size_t size) {
+                          if (e) self->logger->error("async_write: {}", e.message());
+                          self->doWrite();
+                      });
 }
-
-// NOTE: buf in doWrite to makesure thread safe
-auto buf = std::make_shared<asio::streambuf>();
-std::ostream os{buf.get()};
-os << writeQueue.front();
-writeQueue.pop();
-asio::async_write(*socketPtr, *buf,
-                    [self = shared_from_this()](const asio::error_code &e,
-                                                std::size_t size) {
-                        if (e) error("async_write: {}", e.message());
-                        self->doWrite();
-                    });
-
 ```
 ---
 
@@ -167,8 +190,8 @@ void ClientSession::doRead() {
     auto streambuf = std::make_shared<asio::streambuf>();
     auto peek = std::make_shared<std::array<char, sizeof(std::size_t)>>();
 
-    asio::async_read(*socketPtr, *streambuf, [peek, streambuf, self = shared_from_this()](const asio::system_error &e, 
-                            std::size_t size) -> std::size_t {
+    asio::async_read(*socketPtr, *streambuf, [peek, streambuf, self = shared_from_this()](
+        const asio::system_error &e, std::size_t size) -> std::size_t {
             if (e.code()) return 0;
             if (size == sizeof(std::size_t)) {
                 std::memcpy(peek.get(), streambuf.get()->data().data(), sizeof(std::size_t));
@@ -190,11 +213,11 @@ void ClientSession::doRead() {
                 // NOTE hanle read ,do file action ,and push message to queue
                 ...
         });
-
+}
 ```
 
 ---
-## client长连接 openssl tls端到端加密
+## client长连接 openssl tls端到端加密  断线重连
 ```cpp
 using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
 asio::ssl::context ssl_context{asio::ssl::context::tls};
@@ -282,12 +305,6 @@ io->post([selectPath, sendtoPath, self = shared_from_this()]() {
 ```
 ---
 
-## 多用户文件保护
-- 文件在保存时候 保存为`{filename}.sw`
-- 传输完毕后再重命名为`{filename}`
-
----
-
 ## 断点续传
 
 ```cpp
@@ -318,11 +335,33 @@ void app::TcpClient::handleGet(const std::filesystem::path &path, const std::fil
 
 ## 遇到的问题
 - 有些异步操作需要strand序列化
-- [openssl error: bad record MAC](https://blog.csdn.net/gufachongyang02/article/details/52154124)
-1. 服务端的问题：a. 服务端tcp或mina缓冲区处理问题（缓冲区满，被覆盖），b.mina对某session的分组报文的接收不完整问题（半包）； c.服务端的TLS处理存在问题；
-2. 客户端问题：a.连续请求时，客户端的缓冲区问题；客户端TLS的处理存在问题；
-3. 其它（网络原因造成的丢包等）
 
 - linux bind error
 
 - linux 不能获取目录大小
+
+- 系统检测到在一个调用中尝试使用指针参数时的无效指针地址
+  [decryption failed or bad record mac (SSL routines, ssl3_get_record)](https://blog.csdn.net/gufachongyang02/article/details/52154124)
+
+---
+
+## SO_RCVBUF SO_SNDBUF
+### [linux](https://www.cnblogs.com/x_wukong/p/8444557.html)
+```bash
+# man setsockopt
+cat /proc/sys/net/core/rmem_default
+212992  # 26KB
+cat /proc/sys/net/core/wmem_default
+212992
+#新建socket从这两个文件读取
+cat /proc/sys/net/ipv4/tcp_rmem
+4096    131072  6291456   # min default max
+cat /proc/sys/net/ipv4/tcp_wmem
+4096    16384   4194304
+```
+### [windows](https://learn.microsoft.com/zh-cn/troubleshoot/windows-server/networking/description-tcp-features)
+默认`65536~ 4*65536`, 使用了缩放因子.
+$$ (65536)*2^S, S∈[0,14] $$
+TCP 窗口刻度是用于将最大窗口大小从 `65535` 字节增加到 1 千兆字节的选项。
+
+

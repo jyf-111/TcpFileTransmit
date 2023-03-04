@@ -82,6 +82,15 @@ void TcpServer::handleAccept() {
                     [self, socketPtr,
                      serverSession](const asio::error_code& e) {
                         self->logger->info("handshake success");
+
+                        const std::size_t& size =
+                            std::numeric_limits<std::size_t>().max();
+                        asio::socket_base::send_buffer_size send_size(size);
+                        asio::socket_base::receive_buffer_size receive_size(
+                            size);
+                        socketPtr->next_layer().set_option(send_size);
+                        socketPtr->next_layer().set_option(receive_size);
+
                         serverSession->doWrite();
                         serverSession->doRead();
                     });

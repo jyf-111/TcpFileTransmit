@@ -8,7 +8,6 @@
 #include <cassert>
 #include <string>
 
-#include "File.h"
 #include "ImGuiFileDialog.h"
 #include "LoggerRegister.h"
 #include "Properties.h"
@@ -42,11 +41,12 @@ void app::ViewModule::init() {
     const Json::Value &value = Properties::readProperties();
     const std::string &domain = value["domain"].asString();
     const std::string &ip = value["ip"].asString();
-    const int port = value["port"].asInt();
+    const int &port = value["port"].asInt();
     const std::string &level = value["level"].asString();
-    const int filesplit = value["filesplit"].asInt();
-    const int threads = value["threads"].asInt();
+    const std::size_t &filesplit = value["filesplit"].asLargestUInt();
+    const std::size_t threads = value["threads"].asLargestInt();
     const std::string &font = value["font"].asString();
+    const std::size_t &gaptime = value["gaptime"].asLargestUInt();
     std::copy(domain.begin(), domain.end(), std::begin(this->domain));
     std::copy(ip.begin(), ip.end(), std::begin(this->ip));
     std::copy(level.begin(), level.end(), std::begin(this->level));
@@ -54,6 +54,7 @@ void app::ViewModule::init() {
     this->port = port;
     this->filesplit = filesplit;
     this->threads = threads;
+    this->gaptime = gaptime;
 }
 
 void app::ViewModule::render_resultUI(bool &show_window) {
@@ -297,6 +298,8 @@ void app::ViewModule::render_setting_window(bool &show_window) {
 
         ImGui::InputTextWithHint("font", "font", font, IM_ARRAYSIZE(font));
 
+        ImGui::InputInt("gaptime", &gaptime);
+
         if (ImGui::Button("save")) {
             try {
                 Json::Value value;
@@ -307,6 +310,7 @@ void app::ViewModule::render_setting_window(bool &show_window) {
                 value["filesplit"] = filesplit;
                 value["threads"] = threads;
                 value["font"] = font;
+                value["gaptime"] = gaptime;
                 Properties::writeProperties("config.json", value);
                 spdlog::get("logger")->info("config save success");
             } catch (std::exception &e) {

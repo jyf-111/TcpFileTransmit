@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -74,11 +75,11 @@ void app::TcpClient::setqueryPath(const std::filesystem::path &selectPath) {
 
 void app::TcpClient::clearDirList() { dirList.clear(); }
 
-void app::TcpClient::setSavePath(const std::string &savePath) {
+void app::TcpClient::setSavePath(const std::filesystem::path &savePath) {
     this->savePath = std::move(savePath);
 }
 
-const std::string &app::TcpClient::getSavePath() { return savePath; }
+const std::filesystem::path &app::TcpClient::getSavePath() { return savePath; }
 
 void app::TcpClient::ConvertDirStringToList(const std::string &dir) {
     std::stringstream ss(dir);
@@ -183,6 +184,7 @@ void app::TcpClient::ipConnect() {
                 return;
             }
             self->logger->info("connect {}:{} success ", self->ip, self->port);
+
             self->socketPtr->async_handshake(
                 asio::ssl::stream_base::client,
                 [self](const asio::system_error &e) {
@@ -191,6 +193,14 @@ void app::TcpClient::ipConnect() {
                         return;
                     }
                     self->logger->info("handshake success");
+
+                    const std::size_t &size =
+                        std::numeric_limits<std::size_t>().max();
+                    asio::socket_base::send_buffer_size send_size(size);
+                    asio::socket_base::receive_buffer_size receive_size(size);
+                    self->socketPtr->next_layer().set_option(send_size);
+                    self->socketPtr->next_layer().set_option(receive_size);
+
                     self->connectFlag = true;
                     self->session->registerQuery();
                     self->session->doWrite();

@@ -110,7 +110,7 @@ void ClientSession::doRead() {
                 if (protoBuf.GetIsFile()) {
                     self->fileWriteStrand->post([self, protoBuf]() {
                         const std::string &filename =
-                            self->client->getSavePath() + "/" +
+                            self->client->getSavePath().string() + "/" +
                             protoBuf.GetPath().filename().string() + ".sw";
                         File::SetFileData(filename, protoBuf.GetData());
                     });
@@ -124,7 +124,7 @@ void ClientSession::doRead() {
                     } else if (index == total) {
                         self->fileWriteStrand->post([self, protoBuf]() {
                             const auto &tmp =
-                                self->client->getSavePath() + "/" +
+                                self->client->getSavePath().string() + "/" +
                                 protoBuf.GetPath().filename().string();
                             File::ReNameFile(tmp + ".sw", tmp);
                         });
@@ -154,7 +154,7 @@ void ClientSession::doWrite() {
     if (queryIsEmpty()) {
         timer->async_wait(
             [self = shared_from_this()](const asio::error_code &e) {
-                if (e) error("async_wait: {}", e.message());
+                if (e) self->logger->error("async_wait: {}", e.message());
                 self->timer->expires_after(
                     std::chrono::milliseconds(self->gaptime));
                 self->doWrite();
@@ -166,14 +166,12 @@ void ClientSession::doWrite() {
     auto buf = std::make_shared<asio::streambuf>();
     std::ostream os{buf.get()};
     os << popQueryFront();
-    asio::async_write(
-        *socketPtr, *buf,
-        [self = shared_from_this()](const asio::error_code &e,
-                                    std::size_t size) {
-            if (e) error("async_write: {}", e.message());
-            self->timer->async_wait([self](const asio::error_code &) {
-                self->timer->expires_after(std::chrono::milliseconds(40));
-                self->doWrite();
-            });
-        });
+    asio::async_write(*socketPtr, *buf,
+                      [self = shared_from_this()](const asio::error_code &e,
+                                                  std::size_t size) {
+                          if (e)
+                              self->logger->error("async_write: {}",
+                                                  e.message());
+                          self->doWrite();
+                      });
 }

@@ -22,7 +22,7 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
 
     std::vector<std::pair<std::string, std::size_t>> dirList;
     std::filesystem::path queryPath = ".";
-    std::string savePath = ".";
+    std::filesystem::path savePath = ".";
     bool connectFlag = false;
 
     using ssl_socket = asio::ssl::stream<asio::ip::tcp::socket>;
@@ -49,8 +49,8 @@ class TcpClient : public std::enable_shared_from_this<TcpClient> {
         &getDirList();
     void setDirList(
         const std::vector<std::pair<std::string, std::size_t>> &dir);
-    [[nodiscard]] const std::string& getSavePath();
-    void setSavePath(const std::string &savePath);
+    [[nodiscard]] const std::filesystem::path& getSavePath();
+    void setSavePath(const std::filesystem::path &savePath);
     [[nodiscard]] const std::filesystem::path &getqueryPath();
     void setqueryPath(const std::filesystem::path &);
 

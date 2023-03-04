@@ -25,6 +25,7 @@ class ViewModule {
     int filesplit;
     int threads;
     char font[BUF_SIZE] = {};
+    int gaptime;
 
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 

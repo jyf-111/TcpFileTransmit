@@ -58,7 +58,8 @@ example:
     "filesplit": 15000,
     "threads": 0,
     "certificate": "cert/server.pem",
-    "privatekey": "cert/private.key"
+    "privatekey": "cert/private.key",
+    "gaptime": 1000
 }
 ```
 
@@ -77,6 +78,8 @@ the privatekey for tls
 - threads
 if small than 1, it will be your machine cpu number
 else will be the `threads` number
+- gaptime
+the gap time between each send
 
 ### client config
 
@@ -110,3 +113,7 @@ if small than 1, it will be your machine cpu number
 else will be the `threads` number
 - gaptime
 the gap time between each send
+
+## Known Issue
+
+- 文件名不能带空格
