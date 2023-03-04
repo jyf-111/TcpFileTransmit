@@ -117,3 +117,12 @@ the gap time between each send
 ## Known Issue
 
 - 文件名不能带空格
+
+## UML
+
+- server
+![server](https://user-images.githubusercontent.com/77335030/222911286-fe84e710-1113-4d15-bde8-2ebb88385873.jpeg)
+
+- client
+![client](https://user-images.githubusercontent.com/77335030/222911347-74025e98-8a07-41d5-89ce-f696aec4bce8.jpeg)
+
