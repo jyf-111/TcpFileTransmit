@@ -45,7 +45,15 @@ TcpFileTransmit/
         test.cpp
         xmake.lua
 ```
+
 ---
+![](https://gitcode.net/jyf_111/imgbed/-/raw/master/pictures/2023/03/4_23_15_14_client.jpeg)
+
+---
+![](https://gitcode.net/jyf_111/imgbed/-/raw/master/pictures/2023/03/4_23_15_14_server.jpeg)
+
+---
+
 ## asio网络 任务调度
 ```cpp
 auto io = std::make_shared<asio::io_context>();
@@ -360,8 +368,5 @@ cat /proc/sys/net/ipv4/tcp_wmem
 4096    16384   4194304
 ```
 ### [windows](https://learn.microsoft.com/zh-cn/troubleshoot/windows-server/networking/description-tcp-features)
-默认`65536~ 4*65536`, 使用了缩放因子.
-$$ (65536)*2^S, S∈[0,14] $$
+默认`65536~ 4*65536`, 使用了缩放因子. $ (65536)*2^S, S∈[0,14] $
 TCP 窗口刻度是用于将最大窗口大小从 `65535` 字节增加到 1 千兆字节的选项。
-
-
