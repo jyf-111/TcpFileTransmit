@@ -18,6 +18,9 @@ class: lead
     - ui:
         - [imgui](https://github.com/ocornut/imgui/)
         - [glew](https://github.com/nigels-com/glew)
+
+![bg right:60% 90%](https://user-images.githubusercontent.com/77335030/222915789-58bcf5ab-f414-42d5-9b4b-a8201d4ce66c.png)
+
 ---
 ## 结构
 ```bash
@@ -338,18 +341,6 @@ void app::TcpClient::handleGet(const std::filesystem::path &path, const std::fil
     session->enqueue(protoBuf);
 }
 ```
-
----
-
-## 遇到的问题
-- 有些异步操作需要strand序列化
-
-- linux bind error
-
-- linux 不能获取目录大小
-
-- 系统检测到在一个调用中尝试使用指针参数时的无效指针地址
-  [decryption failed or bad record mac (SSL routines, ssl3_get_record)](https://blog.csdn.net/gufachongyang02/article/details/52154124)
 
 ---
 

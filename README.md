@@ -118,7 +118,7 @@ the gap time between each send
 
 ## Known Issue
 
-- 文件名不能带空格
+- 文件名不能带空格,中文
 
 ## UML
 
