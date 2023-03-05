@@ -8,7 +8,6 @@
 #include "File.h"
 #include "Properties.h"
 #include "TcpClient.h"
-#include "asio/error_code.hpp"
 
 ClientSession::ClientSession(std::shared_ptr<ssl_socket> socketPtr,
                              std::shared_ptr<asio::io_context> io)
@@ -63,7 +62,7 @@ void ClientSession::registerQuery() {
 
 void ClientSession::enqueue(const ProtoBuf &buf) {
     std::lock_guard<std::mutex> lock(mtx);
-    writeQueue.push(buf);
+    writeQueue.push(std::move(buf));
 }
 
 void ClientSession::doRead() {
